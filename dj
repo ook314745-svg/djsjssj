@@ -33,10 +33,10 @@ end
 if player.Character then setupCharacter(player.Character) end
 player.CharacterAdded:Connect(setupCharacter)
 
-local CONFIG_FILE = "FR_HUB_Config.json"
+local CONFIG_FILE = "FR_HUB8_Config.json"
 
 local ConfigData = {
-    speedEnabled = false, normalSpeed = 57.9, stealSpeed = 29.6, jumpPower = 25.8, stealRadius = 9,
+    speedEnabled = false, normalSpeed = 57.9, stealSpeed = 29.6, jumpPower = 85, stealRadius = 9,
     fovValue = 120, fovEnabled = false
 }
 
@@ -44,7 +44,7 @@ local function SaveConfig()
     ConfigData.speedEnabled = SpeedBooster and SpeedBooster.Enabled or false
     ConfigData.normalSpeed = SpeedBooster and SpeedBooster.NormalSpeed or 57.9
     ConfigData.stealSpeed = SpeedBooster and SpeedBooster.StealSpeed or 29.6
-    ConfigData.jumpPower = SpeedBooster and SpeedBooster.JumpPower or 25.8
+    ConfigData.jumpPower = SpeedBooster and SpeedBooster.JumpPower or 85
     ConfigData.stealRadius = InstaSteal and InstaSteal.Radius or 9
     ConfigData.fovValue = fovValue or 70
     ConfigData.fovEnabled = fovEnabled or false
@@ -65,7 +65,7 @@ end
 
 LoadConfig()
 
-SpeedBooster = { Enabled = ConfigData.speedEnabled or false, NormalSpeed = ConfigData.normalSpeed or 57.9, StealSpeed = ConfigData.stealSpeed or 29.6, JumpPower = ConfigData.jumpPower or 25.8, HeartbeatConn = nil, JumpConn = nil }
+SpeedBooster = { Enabled = ConfigData.speedEnabled or false, NormalSpeed = ConfigData.normalSpeed or 57.9, StealSpeed = ConfigData.stealSpeed or 29.6, JumpPower = ConfigData.jumpPower or 85, HeartbeatConn = nil, JumpConn = nil }
 
 local function startSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() end
@@ -987,3 +987,38 @@ RunService.RenderStepped:Connect(function()
         )
     end
 end)
+
+
+local player = game.Players.LocalPlayer
+
+local function setup(char)
+    local humanoid = char:WaitForChild("Humanoid")
+    local hrp = char:WaitForChild("HumanoidRootPart")
+
+    humanoid.StateChanged:Connect(function(_, new)
+        if new == Enum.HumanoidStateType.Jumping then
+            
+            task.spawn(function()
+                while hrp and hrp.Parent do
+                    task.wait()
+
+                    local yVel = hrp.AssemblyLinearVelocity.Y
+                    
+                   
+                    
+                    if yVel < 5 then
+                        hrp.AssemblyLinearVelocity = Vector3.new(0, -300, 0)
+                        break
+                    end
+                end
+            end)
+
+        end
+    end)
+end
+
+if player.Character then
+    setup(player.Character)
+end
+
+player.CharacterAdded:Connect(setup)
