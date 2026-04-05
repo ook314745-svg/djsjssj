@@ -33,7 +33,7 @@ end
 if player.Character then setupCharacter(player.Character) end
 player.CharacterAdded:Connect(setupCharacter)
 
-local CONFIG_FILE = "FR_HUB88_Config.json"
+local CONFIG_FILE = "FR_HUB888_Config.json"
 
 local ConfigData = {
     speedEnabled = false, normalSpeed = 57.9, stealSpeed = 29.6, jumpPower = 65, stealRadius = 9,
@@ -481,7 +481,7 @@ local function doDrop()
 end
 
 local floatEnabled = false
-local floatHeight = 10
+local floatHeight = 5
 local floatConn = nil
 local floatOriginalY = nil
 
