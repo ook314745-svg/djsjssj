@@ -553,24 +553,146 @@ end)
 
 local hitCircleEnabled = false
 local hitCircleConn = nil
-local hitCircle = nil
+local hitCircleBeams = {} 
+local hitCircleAttachments = {} 
 local hitCircleAlign = nil
-local hitCircleAttach = nil
 
 local function startHitCircle()
     if hitCircleConn then return end
-    local char = player.Character or player.CharacterAdded:Wait() local hrpLocal = char:WaitForChild("HumanoidRootPart")
-    hitCircleAttach = Instance.new("Attachment", hrpLocal) hitCircleAlign = Instance.new("AlignOrientation", hrpLocal) hitCircleAlign.Attachment0 = hitCircleAttach hitCircleAlign.Mode = Enum.OrientationAlignmentMode.OneAttachment hitCircleAlign.RigidityEnabled = true
-    hitCircle = Instance.new("Part") hitCircle.Shape = Enum.PartType.Cylinder hitCircle.Material = Enum.Material.Neon hitCircle.Size = Vector3.new(0.05, 14.5, 14.5) hitCircle.Color = Color3.fromRGB(0, 255, 0) hitCircle.CanCollide = false hitCircle.Massless = true hitCircle.Parent = workspace
-    local weld = Instance.new("Weld") weld.Part0 = hrpLocal weld.Part1 = hitCircle weld.C0 = CFrame.new(0,-1,0)*CFrame.Angles(0,0,math.rad(90)) weld.Parent = hitCircle
+    
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrpLocal = char:WaitForChild("HumanoidRootPart")
+    
+    
+    local radius = 7.25
+    local segments = 8
+    local baseAttachment = Instance.new("Attachment", hrpLocal)
+    baseAttachment.Position = Vector3.new(0, -1, 0)
+    table.insert(hitCircleAttachments, baseAttachment)
+    
+    
+    local points = {}
+    for i = 0, segments - 1 do
+        local angle = (math.pi * 2 * i) / segments
+        local x = math.cos(angle) * radius
+        local z = math.sin(angle) * radius
+        table.insert(points, Vector3.new(x, -1, z))
+    end
+    
+    
+    for i, pos in ipairs(points) do
+        local attach = Instance.new("Attachment", hrpLocal)
+        attach.Position = pos
+        attach.Name = "CirclePoint_" .. i
+        table.insert(hitCircleAttachments, attach)
+    end
+    
+    
+    for i = 1, segments do
+        local nextIndex = i % segments + 1
+        
+        local beam = Instance.new("Beam")
+        beam.Attachment0 = hitCircleAttachments[i + 1] 
+        beam.Attachment1 = hitCircleAttachments[nextIndex + 1]
+        
+        
+        beam.Color = ColorSequence.new(Color3.fromRGB(0, 255, 0))
+        beam.Width0 = 0.3 
+        beam.Width1 = 0.3
+        beam.LightEmission = 1 
+        beam.LightInfluence = 0 
+        beam.FaceCamera = true
+        beam.Segments = 1
+        beam.Texture = "rbxassetid://0"
+        beam.Transparency = NumberSequence.new(0)
+        beam.Parent = hrpLocal
+        
+        table.insert(hitCircleBeams, beam)
+    end
+    
+    
+    local glow = Instance.new("PointLight", hrpLocal)
+    glow.Color = Color3.fromRGB(0, 255, 0)
+    glow.Brightness = 3
+    glow.Range = 20
+    glow.Name = "HitCircleGlow"
+    
+    
+    hitCircleAlign = Instance.new("AlignOrientation", hrpLocal)
+    hitCircleAlign.Attachment0 = baseAttachment
+    hitCircleAlign.Mode = Enum.OrientationAlignmentMode.OneAttachment
+    hitCircleAlign.RigidityEnabled = true
+    hitCircleAlign.Enabled = false
+    
     hitCircleConn = RunService.RenderStepped:Connect(function()
+        
+        local time = tick()
+        baseAttachment.CFrame = CFrame.new(0, -1, 0) * CFrame.Angles(0, time * 2, 0)
+        
+       
         local target, dmin = nil, 7.25
-        for _, p in ipairs(Players:GetPlayers()) do if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then local d = (p.Character.HumanoidRootPart.Position - hrpLocal.Position).Magnitude if d <= dmin then target, dmin = p.Character.HumanoidRootPart, d end end end
-        if target then char.Humanoid.AutoRotate = false hitCircleAlign.Enabled = true hitCircleAlign.CFrame = CFrame.lookAt(hrpLocal.Position, Vector3.new(target.Position.X, hrpLocal.Position.Y, target.Position.Z)) local t = char:FindFirstChild("Bat") or char:FindFirstChild("Medusa") if t then t:Activate() end else hitCircleAlign.Enabled = false char.Humanoid.AutoRotate = true end
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local d = (p.Character.HumanoidRootPart.Position - hrpLocal.Position).Magnitude
+                if d <= dmin then
+                    target, dmin = p.Character.HumanoidRootPart, d
+                end
+            end
+        end
+        
+        if target then
+            char.Humanoid.AutoRotate = false
+            hitCircleAlign.Enabled = true
+            hitCircleAlign.CFrame = CFrame.lookAt(
+                hrpLocal.Position, 
+                Vector3.new(target.Position.X, hrpLocal.Position.Y, target.Position.Z)
+            )
+            local t = char:FindFirstChild("Bat") or char:FindFirstChild("Medusa")
+            if t then t:Activate() end
+        else
+            hitCircleAlign.Enabled = false
+            char.Humanoid.AutoRotate = true
+        end
     end)
 end
 
-local function stopHitCircle() if hitCircleConn then hitCircleConn:Disconnect() hitCircleConn = nil end if hitCircle then hitCircle:Destroy() hitCircle = nil end if hitCircleAlign then hitCircleAlign:Destroy() hitCircleAlign = nil end if hitCircleAttach then hitCircleAttach:Destroy() hitCircleAttach = nil end if player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.AutoRotate = true end end
+local function stopHitCircle()
+    if hitCircleConn then
+        hitCircleConn:Disconnect()
+        hitCircleConn = nil
+    end
+    
+    
+    for _, beam in ipairs(hitCircleBeams) do
+        if beam then beam:Destroy() end
+    end
+    hitCircleBeams = {}
+    
+    
+    for _, attach in ipairs(hitCircleAttachments) do
+        if attach then attach:Destroy() end
+    end
+    hitCircleAttachments = {}
+    
+    
+    if player.Character then
+        local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local glow = hrp:FindFirstChild("HitCircleGlow")
+            if glow then glow:Destroy() end
+        end
+    end
+    
+    if hitCircleAlign then
+        hitCircleAlign:Destroy()
+        hitCircleAlign = nil
+    end
+    
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.AutoRotate = true
+    end
+end
+
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "FRHUBGUI"
@@ -950,43 +1072,7 @@ button.MouseButton1Click:Connect(function()
     end
 end)
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 
-local player = Players.LocalPlayer
-
-
-local circle = Instance.new("Part")
-circle.Name = "GroundCircle"
-circle.Shape = Enum.PartType.Cylinder
-circle.Size = Vector3.new(0.2, 33, 33) 
-circle.Color = Color3.fromRGB(128, 0, 128) 
-circle.Material = Enum.Material.Neon
-circle.Transparency = 0.3
-circle.Anchored = true
-circle.CanCollide = false
-circle.Parent = workspace
-
-
-circle.Orientation = Vector3.new(0, 0, 90)
-
-RunService.RenderStepped:Connect(function()
-    if player.Character 
-    and player.Character:FindFirstChild("HumanoidRootPart") then
-        
-        local hrp = player.Character.HumanoidRootPart
-        
-     
-
-
-
-       circle.Position = Vector3.new(
-            hrp.Position.X,
-            hrp.Position.Y - 2, 
-            hrp.Position.Z
-        )
-    end
-end)
 
 
 local player = game.Players.LocalPlayer
@@ -1022,3 +1108,76 @@ if player.Character then
 end
 
 player.CharacterAdded:Connect(setup)
+
+
+
+-- FR HUB Desync
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/FRDESZ/refs/heads/main/obfuscated.lua%20(1).txt"))()
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+local radius = 16
+local segments = 30
+
+local folder = Instance.new("Folder")
+folder.Name = "NeonCircle"
+folder.Parent = workspace
+
+local attachments = {}
+local beams = {}
+
+
+for i = 1, segments do
+    local att = Instance.new("Attachment")
+    att.Parent = folder
+    table.insert(attachments, att)
+end
+
+
+for i = 1, segments do
+    local beam = Instance.new("Beam")
+    
+    beam.Attachment0 = attachments[i]
+    beam.Attachment1 = attachments[i % segments + 1]
+    
+    beam.Width0 = 0.6
+    beam.Width1 = 0.6
+    
+    beam.Color = ColorSequence.new(Color3.fromRGB(170, 0, 255))
+    
+    beam.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.2),
+        NumberSequenceKeypoint.new(1, 0.2)
+    })
+    
+    
+    beam.LightEmission = 1
+    beam.LightInfluence = 0
+    
+    beam.FaceCamera = true
+    
+    beam.Parent = folder
+    table.insert(beams, beam)
+end
+
+
+RunService.RenderStepped:Connect(function()
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        
+        local hrp = char.HumanoidRootPart
+        
+        for i = 1, segments do
+            local angle = (i / segments) * math.pi * 2
+            
+            attachments[i].WorldPosition = Vector3.new(
+                hrp.Position.X + math.cos(angle) * radius,
+                hrp.Position.Y - 2,
+                hrp.Position.Z + math.sin(angle) * radius
+            )
+        end
+    end
+end)
