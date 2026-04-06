@@ -1,3 +1,122 @@
+-- new drop brainrot code my nigga
+
+_G.DB = _G.DB or {}
+pcall(function() _G.DB.G:Destroy() end)
+pcall(function() _G.DB.S() end)
+
+_G.DB.G = Instance.new("ScreenGui")
+_G.DB.G.Name = "DB"
+_G.DB.G.ResetOnSpawn = false
+_G.DB.G.Parent = game.CoreGui
+
+_G.DB.C = {o = Color3.fromRGB(88, 28, 135), n = Color3.fromRGB(180, 30, 30), b = Color3.fromRGB(147, 51, 234), t = Color3.fromRGB(216, 180, 254)}
+_G.DB.P = game.Players
+_G.DB.T = game.TweenService
+_G.DB.R = game.RunService
+_G.DB.U = game.UserInputService
+_G.DB.L = _G.DB.P.LocalPlayer
+_G.DB.X = {}
+_G.DB.A = false
+
+_G.DB.Start = function()
+    _G.DB.A = true
+    table.insert(_G.DB.X, _G.DB.R.Stepped:Connect(function()
+        if not _G.DB.A then return end
+        for _, p in ipairs(_G.DB.P:GetPlayers()) do
+            if p ~= _G.DB.L and p.Character then
+                for _, a in ipairs(p.Character:GetChildren()) do
+                    if a:IsA("BasePart") then a.CanCollide = false end
+                end
+            end
+        end
+    end))
+    coroutine.resume(coroutine.create(function()
+        while _G.DB.A do
+            _G.DB.R.Heartbeat:Wait()
+            _G.DB.H = _G.DB.L.Character and _G.DB.L.Character:FindFirstChild("HumanoidRootPart")
+            if _G.DB.H then
+                _G.DB.V = _G.DB.H.Velocity
+                _G.DB.H.Velocity = _G.DB.V * 10000 + Vector3.new(0, 10000, 0)
+                _G.DB.R.RenderStepped:Wait()
+                if _G.DB.H.Parent then _G.DB.H.Velocity = _G.DB.V end
+                _G.DB.R.Stepped:Wait()
+                if _G.DB.H.Parent then _G.DB.H.Velocity = _G.DB.V + Vector3.new(0, 0.1, 0) end
+            end
+        end
+    end))
+end
+
+_G.DB.S = function()
+    _G.DB.A = false
+    for _, c in ipairs(_G.DB.X) do
+        pcall(function() if typeof(c) == "RBXScriptConnection" then c:Disconnect() else task.cancel(c) end end)
+    end
+    _G.DB.X = {}
+end
+
+_G.DB.B = Instance.new("TextButton")
+_G.DB.B.Size = UDim2.new(0, 88, 0, 38)
+_G.DB.B.Position = UDim2.new(0, 6, 0, 80)
+_G.DB.B.Text = "DROP BRAINROTv2"
+_G.DB.B.TextColor3 = _G.DB.C.t
+_G.DB.B.Font = Enum.Font.GothamBold
+_G.DB.B.TextSize = 10
+_G.DB.B.AutoButtonColor = false
+_G.DB.B.BackgroundColor3 = _G.DB.C.o
+_G.DB.B.BackgroundTransparency = 0.15
+_G.DB.B.Parent = _G.DB.G
+
+Instance.new("UICorner", _G.DB.B).CornerRadius = UDim.new(0, 9)
+
+_G.DB.K = Instance.new("UIStroke", _G.DB.B)
+_G.DB.K.Color = _G.DB.C.b
+_G.DB.K.Thickness = 1
+_G.DB.K.Transparency = 0.2
+
+_G.DB.DG = {}
+
+_G.DB.B.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        _G.DB.DG.g = true
+        _G.DB.DG.s = i.Position
+        _G.DB.DG.p = _G.DB.B.Position
+    end
+end)
+
+_G.DB.B.InputChanged:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch then
+        _G.DB.DG.i = i
+    end
+end)
+
+_G.DB.U.InputChanged:Connect(function(i)
+    if i == _G.DB.DG.i and _G.DB.DG.g then
+        _G.DB.D = i.Position - _G.DB.DG.s
+        _G.DB.B.Position = UDim2.new(_G.DB.DG.p.X.Scale, _G.DB.DG.p.X.Offset + _G.DB.D.X, _G.DB.DG.p.Y.Scale, _G.DB.DG.p.Y.Offset + _G.DB.D.Y)
+    end
+end)
+
+_G.DB.B.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        _G.DB.DG.g = false
+    end
+end)
+
+_G.DB.B.MouseButton1Click:Connect(function()
+    _G.DB.T:Create(_G.DB.B, TweenInfo.new(0.15), {BackgroundColor3 = _G.DB.C.n}):Play()
+    _G.DB.Start()
+    task.delay(0.4, function()
+        _G.DB.S()
+        _G.DB.T:Create(_G.DB.B, TweenInfo.new(0.2), {BackgroundColor3 = _G.DB.C.o}):Play()
+    end)
+end)
+
+_G.DB.L.CharacterAdded:Connect(function()
+    _G.DB.S()
+    _G.DB.B.BackgroundColor3 = _G.DB.C.o
+end)
+
+
 repeat task.wait() until game:IsLoaded()
 
 local TweenService = game:GetService("TweenService")
@@ -735,7 +854,7 @@ local SmallFloatGUI, SmallFloatButton, FloatDot = createSmallGUI("Float Up", 145
 local SmallFOVGUI, SmallFOVButton, FOVDot = createSmallGUI("FOV", 145)
 local SmallAntiRagGUI, SmallAntiRagButton, AntiRagDot = createSmallGUI("Anti Ragdoll", 145)
 local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ragdoll TP", 145)
-local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot(لا يعمل(", 145)
+local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot(لا يعمل(", 999)
 
 SmallSpeedButton.MouseButton1Click:Connect(function()
     SpeedBooster.Enabled = not SpeedBooster.Enabled
