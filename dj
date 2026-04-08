@@ -853,7 +853,7 @@ local SmallInfJumpGUI, SmallInfJumpButton, InfJumpDot = createSmallGUI("Inf Jump
 local SmallFloatGUI, SmallFloatButton, FloatDot = createSmallGUI("Float Up", 145)
 local SmallFOVGUI, SmallFOVButton, FOVDot = createSmallGUI("FOV", 145)
 local SmallAntiRagGUI, SmallAntiRagButton, AntiRagDot = createSmallGUI("Anti Ragdoll", 145)
-local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ragdoll TP", 145)
+local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ragdoll TP(لا يعمل) ", 999)
 local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot(لا يعمل(", 999)
 
 SmallSpeedButton.MouseButton1Click:Connect(function()
@@ -1123,7 +1123,7 @@ local function initializeGUI()
         UnwalkEnabled = true SmallUnwalkGUI.Visible = true SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(140, 40, 220) UnwalkDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0) startUnwalk()
         SmallSpinBotGUI.Visible = false SmallInfJumpGUI.Visible = false SmallFloatGUI.Visible = false SmallFOVGUI.Visible = false
         AntiRagdollEnabled = true SmallAntiRagGUI.Visible = true SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(140, 40, 220) AntiRagDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0) enableAntiRagdoll()
-        RagdollTP.enabled = true SmallRagdollTPGUI.Visible = true SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(140, 40, 220) RagdollTPDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0) startRagdollTP()
+        RagdollTP.enabled = false SmallRagdollTPGUI.Visible = true SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(140, 40, 220) RagdollTPDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         SmallDropGUI.Visible = true SmallDropGUI.BackgroundColor3 = Color3.fromRGB(40, 10, 60) DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     end)
 
