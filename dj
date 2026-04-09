@@ -152,10 +152,10 @@ end
 if player.Character then setupCharacter(player.Character) end
 player.CharacterAdded:Connect(setupCharacter)
 
-local CONFIG_FILE = "FR_HUB888_Config.json"
+local CONFIG_FILE = "FR_HUB8888_Config.json"
 
 local ConfigData = {
-    speedEnabled = false, normalSpeed = 57.9, stealSpeed = 29.6, jumpPower = 65, stealRadius = 9,
+    speedEnabled = false, normalSpeed = 57.9, stealSpeed = 29.6, jumpPower = 44, stealRadius = 9,
     fovValue = 120, fovEnabled = false
 }
 
@@ -163,7 +163,7 @@ local function SaveConfig()
     ConfigData.speedEnabled = SpeedBooster and SpeedBooster.Enabled or false
     ConfigData.normalSpeed = SpeedBooster and SpeedBooster.NormalSpeed or 57.9
     ConfigData.stealSpeed = SpeedBooster and SpeedBooster.StealSpeed or 29.6
-    ConfigData.jumpPower = SpeedBooster and SpeedBooster.JumpPower or 65
+    ConfigData.jumpPower = SpeedBooster and SpeedBooster.JumpPower or 44
     ConfigData.stealRadius = InstaSteal and InstaSteal.Radius or 9
     ConfigData.fovValue = fovValue or 70
     ConfigData.fovEnabled = fovEnabled or false
@@ -184,7 +184,7 @@ end
 
 LoadConfig()
 
-SpeedBooster = { Enabled = ConfigData.speedEnabled or false, NormalSpeed = ConfigData.normalSpeed or 57.9, StealSpeed = ConfigData.stealSpeed or 29.6, JumpPower = ConfigData.jumpPower or 65, HeartbeatConn = nil, JumpConn = nil }
+SpeedBooster = { Enabled = ConfigData.speedEnabled or false, NormalSpeed = ConfigData.normalSpeed or 57.9, StealSpeed = ConfigData.stealSpeed or 29.6, JumpPower = ConfigData.jumpPower or 44, HeartbeatConn = nil, JumpConn = nil }
 
 local function startSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() end
