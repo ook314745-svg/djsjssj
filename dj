@@ -1231,7 +1231,7 @@ player.CharacterAdded:Connect(setup)
 
 
 -- FR HUB Desync
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/FRDESZ/refs/heads/main/obfuscated.lua%20(1).txt"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/desyncv2/refs/heads/main/obfuscated.lua%20(2).txt"))()
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
