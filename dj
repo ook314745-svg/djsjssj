@@ -56,7 +56,7 @@ end
 
 _G.DB.B = Instance.new("TextButton")
 _G.DB.B.Size = UDim2.new(0, 88, 0, 38)
-_G.DB.B.Position = UDim2.new(0, 6, 0, 80)
+_G.DB.B.Position = UDim2.new(0, 6, 0, 5)
 _G.DB.B.Text = "DROP BRAINROTv2"
 _G.DB.B.TextColor3 = _G.DB.C.t
 _G.DB.B.Font = Enum.Font.GothamBold
@@ -1070,44 +1070,14 @@ button.MouseButton1Click:Connect(function()
     end
 end)
 
+--TP DOWN BUTTON
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/TP-DOWN-OPEN-SOURCE-FOR-YALL/refs/heads/main/l"))()
 
+-- مصعد
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/evelatoropensource/refs/heads/main/zz"))()
 
-
-local player = game.Players.LocalPlayer
-
-local function setup(char)
-    local humanoid = char:WaitForChild("Humanoid")
-    local hrp = char:WaitForChild("HumanoidRootPart")
-
-    humanoid.StateChanged:Connect(function(_, new)
-        if new == Enum.HumanoidStateType.Jumping then
-            
-            task.spawn(function()
-                while hrp and hrp.Parent do
-                    task.wait()
-
-                    local yVel = hrp.AssemblyLinearVelocity.Y
-                    
-                   
-                    
-                    if yVel < 5 then
-                        hrp.AssemblyLinearVelocity = Vector3.new(0, -300, 0)
-                        break
-                    end
-                end
-            end)
-
-        end
-    end)
-end
-
-if player.Character then
-    setup(player.Character)
-end
-
-player.CharacterAdded:Connect(setup)
-
-
+-- كاشف desync بنسبه 5 في الميه
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/desyncesp/refs/heads/main/esp"))()
 
 -- FR HUB Desync
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/desyncv2/refs/heads/main/obfuscated.lua%20(2).txt"))()
