@@ -1,6 +1,9 @@
 -- FR HUB LAGGER
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/FRHUBLAGGER/refs/heads/main/obfuscated.lua%20(3).txt"))()
 
+-- New tp down
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/Newtpdown/refs/heads/main/Neww"))()
+
 -- new drop brainrot code my nigga
 
 _G.DB = _G.DB or {}
@@ -1073,6 +1076,9 @@ button.MouseButton1Click:Connect(function()
     end
 end)
 
+-- New Aimbot
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/masry/refs/heads/main/eg"))()
+
 --TP DOWN BUTTON
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/TP-DOWN-OPEN-SOURCE-FOR-YALL/refs/heads/main/l"))()
 
@@ -1122,3 +1128,4 @@ RunService.RenderStepped:Connect(function()
         )
     end
 end)
+
