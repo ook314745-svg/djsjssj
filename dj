@@ -1,5 +1,5 @@
 -- FR HUB LAGGER
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/FRHUBLAGGER/refs/heads/main/obfuscated.lua%20(3).txt"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/FRHUBLAGGER/refs/heads/main/obfuscated.lua%20(7).txt"))()
 
 -- Lagger mode
 loadstring(game:HttpGet("https://pastefy.app/l5xszYz7/raw"))()
