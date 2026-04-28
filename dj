@@ -1,3 +1,9 @@
+-- LATEST AIMBOT
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/BESTAIMBOTEVER/refs/heads/main/obfuscated.lua%20(9).txt"))()
+
+-- FR HUB Desync
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/desyncv2/refs/heads/main/obfuscated.lua%20(2).txt"))()
+
 -- float name
 loadstring(game:HttpGet("https://pastefy.app/R02mX1NW/raw"))()
 
@@ -9,6 +15,94 @@ loadstring(game:HttpGet("https://pastefy.app/l5xszYz7/raw"))()
 
 -- New tp down
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/Newtpdown/refs/heads/main/Neww"))()
+
+local player = game.Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+local gui = Instance.new("ScreenGui")
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local button = Instance.new("TextButton")
+button.Parent = gui
+button.Size = UDim2.new(0,40,0,40) 
+button.Position = UDim2.new(0.9,0,0.5,0)
+button.Text = "OFF"
+button.TextScaled = true
+button.BackgroundColor3 = Color3.fromRGB(255,80,80)
+
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(1,0)
+corner.Parent = button
+
+
+button.Active = true
+button.Draggable = true
+
+local enabled = false
+
+button.MouseButton1Click:Connect(function()
+    enabled = not enabled
+    
+    if enabled then
+        camera.FieldOfView = 120
+        button.Text = "ON"
+        button.BackgroundColor3 = Color3.fromRGB(80,255,120)
+    else
+        camera.FieldOfView = 70
+        button.Text = "OFF"
+        button.BackgroundColor3 = Color3.fromRGB(255,80,80)
+    end
+end)
+
+
+
+--TP DOWN BUTTON
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/TP-DOWN-OPEN-SOURCE-FOR-YALL/refs/heads/main/l"))()
+
+-- مصعد
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/evelatoropensource/refs/heads/main/zz"))()
+
+
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+
+local circle = Instance.new("Part")
+circle.Name = "GroundCircle"
+circle.Shape = Enum.PartType.Cylinder
+circle.Size = Vector3.new(0.2, 33, 33) 
+circle.Color = Color3.fromRGB(128, 0, 128) 
+circle.Material = Enum.Material.Neon
+circle.Transparency = 0.3
+circle.Anchored = true
+circle.CanCollide = false
+circle.Parent = workspace
+
+
+circle.Orientation = Vector3.new(0, 0, 90)
+
+RunService.RenderStepped:Connect(function()
+    if player.Character 
+    and player.Character:FindFirstChild("HumanoidRootPart") then
+        
+        local hrp = player.Character.HumanoidRootPart
+        
+     
+
+
+
+       circle.Position = Vector3.new(
+            hrp.Position.X,
+            hrp.Position.Y - 2, 
+            hrp.Position.Z
+        )
+    end
+end)
 
 -- new drop brainrot code my nigga
 
@@ -628,81 +722,6 @@ end
 
 local function stopFloat() floatEnabled = false if floatConn then floatConn:Disconnect() floatConn = nil end if hrp then hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, -500, hrp.AssemblyLinearVelocity.Z) end end
 
-local batAimbotToggled = false
-local BAT_MOVE_SPEED = 56.5
-local BAT_ENGAGE_RANGE = 20
-local BAT_LOOP_TIME = 0.3
-local lastEquipTick_bat = 0
-local lastUseTick_bat = 0
-local lookConnection_bat = nil
-local attachment_bat = nil
-local alignOrientation_bat = nil
-local BAT_LOOK_DISTANCE = 50
-
-local function nearestPlayer_bat()
-    if not hrp then return nil, math.huge end
-    local closest, minDist = nil, math.huge
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character then
-            local targetHRP = plr.Character:FindFirstChild("HumanoidRootPart") local targetHum = plr.Character:FindFirstChildOfClass("Humanoid")
-            if targetHRP and targetHum and targetHum.Health > 0 then local distance = (targetHRP.Position - hrp.Position).Magnitude if distance < minDist then minDist = distance closest = targetHRP end end
-        end
-    end
-    return closest, minDist
-end
-
-local function closestLookTarget()
-    if not hrp then return nil end
-    local nearest = nil local shortest = BAT_LOOK_DISTANCE
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then local distance = (hrp.Position - plr.Character.HumanoidRootPart.Position).Magnitude if distance < shortest then shortest = distance nearest = plr.Character.HumanoidRootPart end end
-    end
-    return nearest
-end
-
-local function startLookAt()
-    if not hrp or not hum then return end hum.AutoRotate = false
-    attachment_bat = Instance.new("Attachment", hrp) alignOrientation_bat = Instance.new("AlignOrientation") alignOrientation_bat.Attachment0 = attachment_bat alignOrientation_bat.Mode = Enum.OrientationAlignmentMode.OneAttachment alignOrientation_bat.MaxTorque = Vector3.new(math.huge, math.huge, math.huge) alignOrientation_bat.Responsiveness = 1000 alignOrientation_bat.RigidityEnabled = true alignOrientation_bat.Parent = hrp
-    lookConnection_bat = RunService.RenderStepped:Connect(function() if not hrp or not alignOrientation_bat then return end local target = closestLookTarget() if not target then return end local lookPos = Vector3.new(target.Position.X, hrp.Position.Y, target.Position.Z) alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, lookPos) end)
-end
-
-local function stopLookAt() if lookConnection_bat then lookConnection_bat:Disconnect() lookConnection_bat = nil end if alignOrientation_bat then alignOrientation_bat:Destroy() alignOrientation_bat = nil end if attachment_bat then attachment_bat:Destroy() attachment_bat = nil end if hum then hum.AutoRotate = true end end
-local function stopBatAimbot() batAimbotToggled = false stopLookAt() if hrp then hrp.AssemblyLinearVelocity = Vector3.zero end end
-local function startBatAimbot() stopBatAimbot() batAimbotToggled = true if not character or not hrp or not hum then return end startLookAt() end
-local function equipBat_target() if not hum then return end local batTool = player.Backpack:FindFirstChild("Bat") or character:FindFirstChild("Bat") if batTool then hum:EquipTool(batTool) return batTool end end
-
-RunService.Heartbeat:Connect(function()
-    if not batAimbotToggled or not character or not hrp or not hum then return end
-    hrp.CanCollide = false
-    local target, distance = nearestPlayer_bat() if not target then return end
-    local targetPos = Vector3.new(target.Position.X, target.Position.Y, target.Position.Z) local moveDir = (targetPos - hrp.Position).Unit hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
-    if distance <= BAT_ENGAGE_RANGE then
-        if tick() - lastEquipTick_bat >= BAT_LOOP_TIME then equipBat_target() lastEquipTick_bat = tick() end
-        if tick() - lastUseTick_bat >= BAT_LOOP_TIME then local batTool = character:FindFirstChild("Bat") if batTool then batTool:Activate() end lastUseTick_bat = tick() end
-    end
-end)
-
-local hitCircleEnabled = false
-local hitCircleConn = nil
-local hitCircle = nil
-local hitCircleAlign = nil
-local hitCircleAttach = nil
-
-local function startHitCircle()
-    if hitCircleConn then return end
-    local char = player.Character or player.CharacterAdded:Wait() local hrpLocal = char:WaitForChild("HumanoidRootPart")
-    hitCircleAttach = Instance.new("Attachment", hrpLocal) hitCircleAlign = Instance.new("AlignOrientation", hrpLocal) hitCircleAlign.Attachment0 = hitCircleAttach hitCircleAlign.Mode = Enum.OrientationAlignmentMode.OneAttachment hitCircleAlign.RigidityEnabled = true
-    hitCircle = Instance.new("Part") hitCircle.Shape = Enum.PartType.Cylinder hitCircle.Material = Enum.Material.Neon hitCircle.Size = Vector3.new(0.05, 14.5, 14.5) hitCircle.Color = Color3.fromRGB(0, 255, 0) hitCircle.CanCollide = false hitCircle.Massless = true hitCircle.Parent = workspace
-    local weld = Instance.new("Weld") weld.Part0 = hrpLocal weld.Part1 = hitCircle weld.C0 = CFrame.new(0,-1,0)*CFrame.Angles(0,0,math.rad(90)) weld.Parent = hitCircle
-    hitCircleConn = RunService.RenderStepped:Connect(function()
-        local target, dmin = nil, 7.25
-        for _, p in ipairs(Players:GetPlayers()) do if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then local d = (p.Character.HumanoidRootPart.Position - hrpLocal.Position).Magnitude if d <= dmin then target, dmin = p.Character.HumanoidRootPart, d end end end
-        if target then char.Humanoid.AutoRotate = false hitCircleAlign.Enabled = true hitCircleAlign.CFrame = CFrame.lookAt(hrpLocal.Position, Vector3.new(target.Position.X, hrpLocal.Position.Y, target.Position.Z)) local t = char:FindFirstChild("Bat") or char:FindFirstChild("Medusa") if t then t:Activate() end else hitCircleAlign.Enabled = false char.Humanoid.AutoRotate = true end
-    end)
-end
-
-local function stopHitCircle() if hitCircleConn then hitCircleConn:Disconnect() hitCircleConn = nil end if hitCircle then hitCircle:Destroy() hitCircle = nil end if hitCircleAlign then hitCircleAlign:Destroy() hitCircleAlign = nil end if hitCircleAttach then hitCircleAttach:Destroy() hitCircleAttach = nil end if player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.AutoRotate = true end end
-
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "FRHUBGUI"
@@ -964,7 +983,7 @@ local function createMainGUI()
     local LoadCorner = Instance.new("UICorner") LoadCorner.CornerRadius = UDim.new(0, 5) LoadCorner.Parent = LoadConfigButton LoadConfigButton.MouseButton1Click:Connect(function() LoadConfig() if normalSpeedBox then normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed) end if stealSpeedBox then stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed) end if fovSliderBox then fovSliderBox.Text = tostring(fovValue) end RadiusValue.Text = tostring(InstaSteal.Radius) end)
 
     local CreditsTitle = Instance.new("TextLabel") CreditsTitle.Size = UDim2.new(1, 0, 0, 40) CreditsTitle.BackgroundTransparency = 1 CreditsTitle.Text = " 🌟 الحقوق 🌟" CreditsTitle.TextColor3 = Color3.fromRGB(200, 100, 255) CreditsTitle.Font = Enum.Font.GothamBold CreditsTitle.TextSize = 18 CreditsTitle.Parent = CreditsContent
-    local CreditsText = Instance.new("TextLabel") CreditsText.Size = UDim2.new(1, 0, 0, 100) CreditsText.BackgroundColor3 = Color3.fromRGB(40, 10, 60) CreditsText.BorderSizePixel = 0 CreditsText.Text = "\nFRHUB/BYFARES.\n(بمساعده SA ALONE)\n\n" CreditsText.TextColor3 = Color3.fromRGB(255, 255, 255) CreditsText.Font = Enum.Font.GothamBold CreditsText.TextSize = 12 CreditsText.TextYAlignment = Enum.TextYAlignment.Top CreditsText.Parent = CreditsContent
+    local CreditsText = Instance.new("TextLabel") CreditsText.Size = UDim2.new(1, 0, 0, 100) CreditsText.BackgroundColor3 = Color3.fromRGB(40, 10, 60) CreditsText.BorderSizePixel = 0 CreditsText.Text = "\nFRHUB/BYFARES.\n)بمساعده SA ALONE( \n و بمساعدة AETHER-HUB\n" CreditsText.TextColor3 = Color3.fromRGB(255, 255, 255) CreditsText.Font = Enum.Font.GothamBold CreditsText.TextSize = 11 CreditsText.TextYAlignment = Enum.TextYAlignment.Top CreditsText.Parent = CreditsContent
     local CreditsCorner = Instance.new("UICorner") CreditsCorner.CornerRadius = UDim.new(0, 5) CreditsCorner.Parent = CreditsText
 end
 
@@ -987,25 +1006,7 @@ local function createAutoButtons()
     end)
 end
 
-local function createRightButtons()
-    local TrackPlayerButton = Instance.new("TextButton") TrackPlayerButton.Size = UDim2.new(0, 60, 0, 60) TrackPlayerButton.Position = UDim2.new(1, -75, 0.5, -70) TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(60, 20, 90) TrackPlayerButton.BackgroundTransparency = 0.1 TrackPlayerButton.Text = "TRACK\nPLAYER" TrackPlayerButton.TextColor3 = Color3.fromRGB(255, 255, 255) TrackPlayerButton.Font = Enum.Font.GothamBold TrackPlayerButton.TextSize = 10 TrackPlayerButton.Active = true TrackPlayerButton.Draggable = true TrackPlayerButton.Parent = ScreenGui
-    local TrackCorner = Instance.new("UICorner") TrackCorner.CornerRadius = UDim.new(0, 10) TrackCorner.Parent = TrackPlayerButton
-    local TrackStroke = Instance.new("UIStroke") TrackStroke.Color = Color3.fromRGB(150, 50, 255) TrackStroke.Thickness = 2 TrackStroke.Parent = TrackPlayerButton
 
-    TrackPlayerButton.MouseButton1Click:Connect(function()
-        batAimbotToggled = not batAimbotToggled
-        if batAimbotToggled then startBatAimbot() TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(140, 40, 220) else stopBatAimbot() TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(60, 20, 90) end
-    end)
-
-    local HitCircleButton = Instance.new("TextButton") HitCircleButton.Size = UDim2.new(0, 60, 0, 60) HitCircleButton.Position = UDim2.new(1, -75, 0.5, 10) HitCircleButton.BackgroundColor3 = Color3.fromRGB(60, 20, 90) HitCircleButton.BackgroundTransparency = 0.1 HitCircleButton.Text = "HIT\nCIRCLE" HitCircleButton.TextColor3 = Color3.fromRGB(255, 255, 255) HitCircleButton.Font = Enum.Font.GothamBold HitCircleButton.TextSize = 10 HitCircleButton.Active = true HitCircleButton.Draggable = true HitCircleButton.Parent = ScreenGui
-    local HitCorner = Instance.new("UICorner") HitCorner.CornerRadius = UDim.new(0, 10) HitCorner.Parent = HitCircleButton
-    local HitStroke = Instance.new("UIStroke") HitStroke.Color = Color3.fromRGB(150, 50, 255) HitStroke.Thickness = 2 HitStroke.Parent = HitCircleButton
-
-    HitCircleButton.MouseButton1Click:Connect(function()
-        hitCircleEnabled = not hitCircleEnabled
-        if hitCircleEnabled then startHitCircle() HitCircleButton.BackgroundColor3 = Color3.fromRGB(140, 40, 220) else stopHitCircle() HitCircleButton.BackgroundColor3 = Color3.fromRGB(60, 20, 90) end
-    end)
-end
 
 local function initializeGUI()
     task.spawn(function()
@@ -1028,7 +1029,6 @@ local function initializeGUI()
     OpenButton.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible if MainFrame.Visible then OpenButton.Text = "قفلFR" else OpenButton.Text = "فتح FR" end end)
     
     createAutoButtons()
-    createRightButtons()
     
     if ConfigData.speedEnabled then SpeedBooster.Enabled = true SmallSpeedGUI.Visible = true SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(140, 40, 220) SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0) startSpeedBooster() end
     if ConfigData.fovEnabled then fovEnabled = true SmallFOVGUI.Visible = true SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(140, 40, 220) FOVDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0) updateFOV() end
@@ -1037,98 +1037,3 @@ end
 initializeGUI()
 
 game:GetService("Players").PlayerRemoving:Connect(function(plr) if plr == player then SaveConfig() end end)
-
-
-
-
-
-local player = game.Players.LocalPlayer
-local camera = workspace.CurrentCamera
-
-local gui = Instance.new("ScreenGui")
-gui.ResetOnSpawn = false
-gui.Parent = player:WaitForChild("PlayerGui")
-
-local button = Instance.new("TextButton")
-button.Parent = gui
-button.Size = UDim2.new(0,40,0,40) 
-button.Position = UDim2.new(0.9,0,0.5,0)
-button.Text = "OFF"
-button.TextScaled = true
-button.BackgroundColor3 = Color3.fromRGB(255,80,80)
-
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(1,0)
-corner.Parent = button
-
-
-button.Active = true
-button.Draggable = true
-
-local enabled = false
-
-button.MouseButton1Click:Connect(function()
-    enabled = not enabled
-    
-    if enabled then
-        camera.FieldOfView = 120
-        button.Text = "ON"
-        button.BackgroundColor3 = Color3.fromRGB(80,255,120)
-    else
-        camera.FieldOfView = 70
-        button.Text = "OFF"
-        button.BackgroundColor3 = Color3.fromRGB(255,80,80)
-    end
-end)
-
--- New Aimbot
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/masry/refs/heads/main/eg"))()
-
---TP DOWN BUTTON
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/TP-DOWN-OPEN-SOURCE-FOR-YALL/refs/heads/main/l"))()
-
--- مصعد
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/evelatoropensource/refs/heads/main/zz"))()
-
--- FR HUB Desync
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/desyncv2/refs/heads/main/obfuscated.lua%20(2).txt"))()
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-
-
-local circle = Instance.new("Part")
-circle.Name = "GroundCircle"
-circle.Shape = Enum.PartType.Cylinder
-circle.Size = Vector3.new(0.2, 33, 33) 
-circle.Color = Color3.fromRGB(128, 0, 128) 
-circle.Material = Enum.Material.Neon
-circle.Transparency = 0.3
-circle.Anchored = true
-circle.CanCollide = false
-circle.Parent = workspace
-
-
-circle.Orientation = Vector3.new(0, 0, 90)
-
-RunService.RenderStepped:Connect(function()
-    if player.Character 
-    and player.Character:FindFirstChild("HumanoidRootPart") then
-        
-        local hrp = player.Character.HumanoidRootPart
-        
-     
-
-
-
-       circle.Position = Vector3.new(
-            hrp.Position.X,
-            hrp.Position.Y - 2, 
-            hrp.Position.Z
-        )
-    end
-end)
-
