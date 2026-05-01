@@ -1,5 +1,8 @@
--- LATEST AIMBOT
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/BESTAIMBOTEVER/refs/heads/main/obfuscated.lua%20(9).txt"))()
+-- BEST FPS
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/FPS/refs/heads/main/BESTFPS"))()
+
+-- BEST AIMBOT
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/BESTAIMBOT/refs/heads/main/obfuscated.lua%20(10).txt"))()
 
 -- FR HUB Desync
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/desyncv2/refs/heads/main/obfuscated.lua%20(2).txt"))()
