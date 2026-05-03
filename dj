@@ -1,3 +1,340 @@
+repeat task.wait() until game:IsLoaded()
+
+local RunService       = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui          = game:GetService("CoreGui")
+local Players          = game:GetService("Players")
+
+local player = Players.LocalPlayer
+
+_G.SpeedBooster = _G.SpeedBooster or {}
+_G.SpeedBooster.NormalSpeed = _G.SpeedBooster.NormalSpeed or 59.2
+_G.SpeedBooster.StealSpeed  = _G.SpeedBooster.StealSpeed  or 29.6
+local SpeedBooster = _G.SpeedBooster
+
+
+
+local pathActive           = false
+local lastFlatVel          = Vector3.zero
+local PATH_BASE_STOP       = 1.35
+local PATH_MIN_STOP        = 0.65
+local PATH_NEXT_POINT_BIAS = 0.45
+local PATH_SMOOTH_FACTOR   = 0.12
+
+local stealPath1 = {
+    {pos=Vector3.new(-470.6,-5.9, 34.4)},
+    {pos=Vector3.new(-484.2,-3.9, 21.4)},
+    {pos=Vector3.new(-475.6,-5.8, 29.3)},
+    {pos=Vector3.new(-473.4,-5.9,111.0)},
+}
+local stealPath2 = {
+    {pos=Vector3.new(-474.7,-5.9, 91.0)},
+    {pos=Vector3.new(-483.4,-3.9, 97.3)},
+    {pos=Vector3.new(-474.7,-5.9, 91.0)},
+    {pos=Vector3.new(-476.1,-5.5, 25.4)},
+}
+
+local function pathMoveToPoint(hrp, current, nextPoint, isSteal)
+    local char = hrp.Parent
+    local hum  = char and char:FindFirstChildOfClass("Humanoid")
+    local conn
+    conn = RunService.Heartbeat:Connect(function()
+        if not pathActive then
+            conn:Disconnect()
+            if hum then hum:Move(Vector3.zero, false) end
+            return
+        end
+        
+
+        
+        if hum and hum:GetState() == Enum.HumanoidStateType.Physics then return end
+
+        local speed    = isSteal and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
+        local pos      = hrp.Position
+        local target   = Vector3.new(current.X, pos.Y, current.Z)
+        local dir      = target - pos
+        local dist     = dir.Magnitude
+        local stopDist = math.clamp(PATH_BASE_STOP - dist*0.04, PATH_MIN_STOP, PATH_BASE_STOP)
+        if dist <= stopDist then
+            conn:Disconnect()
+            if hum then hum:Move(Vector3.zero, false) end
+            return
+        end
+        local moveDir = dir.Unit
+        if nextPoint then
+            local nextDir = (Vector3.new(nextPoint.X, pos.Y, nextPoint.Z) - pos).Unit
+            moveDir = (moveDir + nextDir * PATH_NEXT_POINT_BIAS).Unit
+        end
+        if lastFlatVel.Magnitude > 0.1 then
+            moveDir = (moveDir*(1-PATH_SMOOTH_FACTOR) + lastFlatVel.Unit*PATH_SMOOTH_FACTOR).Unit
+        end
+        if hum then hum:Move(moveDir, false) end
+        local vel = Vector3.new(moveDir.X*speed, hrp.Velocity.Y, moveDir.Z*speed)
+        hrp.Velocity = vel
+        lastFlatVel  = Vector3.new(vel.X, 0, vel.Z)
+    end)
+    while pathActive and
+        (Vector3.new(hrp.Position.X,0,hrp.Position.Z) -
+         Vector3.new(current.X,0,current.Z)).Magnitude > PATH_BASE_STOP
+    do RunService.Heartbeat:Wait() end
+end
+
+local function runStealPath(path)
+    local char    = player.Character or player.CharacterAdded:Wait()
+    local hrpLocal = char:WaitForChild("HumanoidRootPart")
+    for i, p in ipairs(path) do
+        if not pathActive then return end
+        local nextP = path[i+1] and path[i+1].pos
+        pathMoveToPoint(hrpLocal, p.pos, nextP, i > 2)
+        task.wait()
+    end
+end
+
+local function startStealPath(path)
+    pathActive = true
+    task.spawn(function()
+        while pathActive do runStealPath(path) task.wait(0.1) end
+    end)
+end
+
+local function stopStealPath()
+    pathActive = false
+    local char = player.Character
+    local hum  = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then hum:Move(Vector3.zero, false) end
+end
+
+
+
+local sg = Instance.new("ScreenGui")
+sg.Name           = "AutoPath_Standalone"
+sg.ResetOnSpawn   = false
+sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+sg.Parent         = CoreGui
+
+local W, H = 168, 102
+
+local main = Instance.new("Frame", sg)
+main.Name                   = "Main"
+main.Size                   = UDim2.new(0, W, 0, H)
+main.Position               = UDim2.new(0, 15, 0.5, 0)
+main.BackgroundColor3       = Color3.fromRGB(25, 5, 40)
+main.BackgroundTransparency = 0.08
+main.BorderSizePixel        = 0
+main.Active                 = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+
+local mainStroke = Instance.new("UIStroke", main)
+mainStroke.Thickness       = 2
+mainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+local shimGrad = Instance.new("UIGradient", mainStroke)
+shimGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0,    Color3.fromRGB(255,255,255)),
+    ColorSequenceKeypoint.new(0.20, Color3.fromRGB(210,160,255)),
+    ColorSequenceKeypoint.new(0.45, Color3.fromRGB(255,255,255)),
+    ColorSequenceKeypoint.new(0.55, Color3.fromRGB(255,255,255)),
+    ColorSequenceKeypoint.new(0.80, Color3.fromRGB(210,160,255)),
+    ColorSequenceKeypoint.new(1,    Color3.fromRGB(255,255,255)),
+})
+shimGrad.Transparency = NumberSequence.new({
+    NumberSequenceKeypoint.new(0,    0.80),
+    NumberSequenceKeypoint.new(0.20, 0.40),
+    NumberSequenceKeypoint.new(0.45, 0.85),
+    NumberSequenceKeypoint.new(0.55, 0.05),
+    NumberSequenceKeypoint.new(0.80, 0.40),
+    NumberSequenceKeypoint.new(1,    0.80),
+})
+shimGrad.Rotation = 0
+task.spawn(function()
+    while main.Parent do
+        shimGrad.Rotation = (shimGrad.Rotation + 1.2) % 360
+        task.wait(0.033)
+    end
+end)
+
+local header = Instance.new("Frame", main)
+header.Size                   = UDim2.new(1, 0, 0, 26)
+header.BackgroundColor3       = Color3.fromRGB(40, 10, 60)
+header.BackgroundTransparency = 0
+header.BorderSizePixel        = 0
+Instance.new("UICorner", header).CornerRadius = UDim.new(0, 10)
+local hFix = Instance.new("Frame", header)
+hFix.Size             = UDim2.new(1, 0, 0, 10)
+hFix.Position         = UDim2.new(0, 0, 1, -10)
+hFix.BackgroundColor3 = Color3.fromRGB(40, 10, 60)
+hFix.BorderSizePixel  = 0
+
+local titleLbl = Instance.new("TextLabel", header)
+titleLbl.Size                   = UDim2.new(1, -10, 1, 0)
+titleLbl.Position               = UDim2.new(0, 10, 0, 0)
+titleLbl.BackgroundTransparency = 1
+titleLbl.Text                   = "AUTO PATH"
+titleLbl.TextColor3             = Color3.fromRGB(255, 255, 255)
+titleLbl.Font                   = Enum.Font.GothamBlack
+titleLbl.TextSize               = 12
+titleLbl.TextXAlignment         = Enum.TextXAlignment.Left
+local tGrad = Instance.new("UIGradient", titleLbl)
+tGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0,   Color3.fromRGB(190,120,255)),
+    ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255,255,255)),
+    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255,255,255)),
+    ColorSequenceKeypoint.new(1,   Color3.fromRGB(190,120,255)),
+})
+tGrad.Rotation = 90
+task.spawn(function()
+    while titleLbl.Parent do tGrad.Rotation = (tGrad.Rotation + 0.8) % 360 task.wait(0.016) end
+end)
+
+local btnY = 31
+local btnH = 36
+local btnW = 72
+
+local AutoLeftButton = Instance.new("TextButton", main)
+AutoLeftButton.Size                   = UDim2.new(0, btnW, 0, btnH)
+AutoLeftButton.Position               = UDim2.new(0, 8, 0, btnY)
+AutoLeftButton.BackgroundColor3       = Color3.fromRGB(60, 20, 90)
+AutoLeftButton.BackgroundTransparency = 0.1
+AutoLeftButton.Text                   = "AUTO\nLEFT"
+AutoLeftButton.TextColor3             = Color3.fromRGB(255, 255, 255)
+AutoLeftButton.Font                   = Enum.Font.GothamBold
+AutoLeftButton.TextSize               = 11
+AutoLeftButton.AutoButtonColor        = false
+AutoLeftButton.ZIndex                 = 3
+Instance.new("UICorner", AutoLeftButton).CornerRadius = UDim.new(0, 8)
+local lStroke = Instance.new("UIStroke", AutoLeftButton)
+lStroke.Color = Color3.fromRGB(150, 50, 255) lStroke.Thickness = 2
+
+local AutoRightButton = Instance.new("TextButton", main)
+AutoRightButton.Size                   = UDim2.new(0, btnW, 0, btnH)
+AutoRightButton.Position               = UDim2.new(0, 88, 0, btnY)
+AutoRightButton.BackgroundColor3       = Color3.fromRGB(60, 20, 90)
+AutoRightButton.BackgroundTransparency = 0.1
+AutoRightButton.Text                   = "AUTO\nRIGHT"
+AutoRightButton.TextColor3             = Color3.fromRGB(255, 255, 255)
+AutoRightButton.Font                   = Enum.Font.GothamBold
+AutoRightButton.TextSize               = 11
+AutoRightButton.AutoButtonColor        = false
+AutoRightButton.ZIndex                 = 3
+Instance.new("UICorner", AutoRightButton).CornerRadius = UDim.new(0, 8)
+local rStroke = Instance.new("UIStroke", AutoRightButton)
+rStroke.Color = Color3.fromRGB(150, 50, 255) rStroke.Thickness = 2
+
+local modeRow = Instance.new("Frame", main)
+modeRow.Size                   = UDim2.new(1, -16, 0, 18)
+modeRow.Position               = UDim2.new(0, 8, 0, 73)
+modeRow.BackgroundColor3       = Color3.fromRGB(28, 10, 48)
+modeRow.BackgroundTransparency = 0.3
+modeRow.BorderSizePixel        = 0
+Instance.new("UICorner", modeRow).CornerRadius = UDim.new(0, 5)
+local modeStroke = Instance.new("UIStroke", modeRow)
+modeStroke.Thickness = 1
+modeStroke.Color     = Color3.fromRGB(140, 40, 220)
+
+local modePrefixLbl = Instance.new("TextLabel", modeRow)
+modePrefixLbl.Size                   = UDim2.new(0, 54, 1, 0)
+modePrefixLbl.Position               = UDim2.new(0, 6, 0, 0)
+modePrefixLbl.BackgroundTransparency = 1
+modePrefixLbl.Text                   = "MODE:"
+modePrefixLbl.TextColor3             = Color3.fromRGB(180, 130, 230)
+modePrefixLbl.Font                   = Enum.Font.GothamBold
+modePrefixLbl.TextSize               = 10
+modePrefixLbl.TextXAlignment         = Enum.TextXAlignment.Left
+
+local modeColors = {
+    NORMAL = Color3.fromRGB(100, 220, 120),
+    DESYNC = Color3.fromRGB(255, 200, 60),
+    LAGGER = Color3.fromRGB(255, 80, 80),
+}
+local modeValLbl = Instance.new("TextLabel", modeRow)
+modeValLbl.Size                   = UDim2.new(1, -64, 1, 0)
+modeValLbl.Position               = UDim2.new(0, 60, 0, 0)
+modeValLbl.BackgroundTransparency = 1
+modeValLbl.Text                   = "NORMAL"
+modeValLbl.TextColor3             = modeColors["NORMAL"]
+modeValLbl.Font                   = Enum.Font.GothamBlack
+modeValLbl.TextSize               = 10
+modeValLbl.TextXAlignment         = Enum.TextXAlignment.Left
+
+task.spawn(function()
+    local lastMode = ""
+    while modeValLbl.Parent do
+        local m = (typeof(_G.SpeedBooster) == "table" and _G.SpeedBooster.Mode) or "NORMAL"
+        if m ~= lastMode then
+            modeValLbl.Text       = m
+            modeValLbl.TextColor3 = modeColors[m] or Color3.fromRGB(210, 160, 255)
+            lastMode = m
+        end
+        task.wait(0.1)
+    end
+end)
+
+
+
+AutoLeftButton.MouseButton1Click:Connect(function()
+    if pathActive then
+        stopStealPath()
+        AutoLeftButton.BackgroundColor3  = Color3.fromRGB(60, 20, 90)
+        AutoRightButton.BackgroundColor3 = Color3.fromRGB(60, 20, 90)
+        lStroke.Color = Color3.fromRGB(150, 50, 255)
+        rStroke.Color = Color3.fromRGB(150, 50, 255)
+    else
+        stopStealPath()
+        AutoLeftButton.BackgroundColor3  = Color3.fromRGB(140, 40, 220)
+        AutoRightButton.BackgroundColor3 = Color3.fromRGB(60, 20, 90)
+        lStroke.Color = Color3.fromRGB(0, 220, 120)
+        rStroke.Color = Color3.fromRGB(150, 50, 255)
+        startStealPath(stealPath2)
+    end
+end)
+
+AutoRightButton.MouseButton1Click:Connect(function()
+    if pathActive then
+        stopStealPath()
+        AutoLeftButton.BackgroundColor3  = Color3.fromRGB(60, 20, 90)
+        AutoRightButton.BackgroundColor3 = Color3.fromRGB(60, 20, 90)
+        lStroke.Color = Color3.fromRGB(150, 50, 255)
+        rStroke.Color = Color3.fromRGB(150, 50, 255)
+    else
+        stopStealPath()
+        AutoLeftButton.BackgroundColor3  = Color3.fromRGB(60, 20, 90)
+        AutoRightButton.BackgroundColor3 = Color3.fromRGB(140, 40, 220)
+        lStroke.Color = Color3.fromRGB(150, 50, 255)
+        rStroke.Color = Color3.fromRGB(0, 220, 120)
+        startStealPath(stealPath1)
+    end
+end)
+
+
+
+local dragging, dragStart, startPos = false, nil, nil
+
+main.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging  = true
+        dragStart = {x = input.Position.X, y = input.Position.Y}
+        startPos  = {x = main.Position.X.Offset, y = main.Position.Y.Offset}
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if not dragging or not dragStart or not startPos then return end
+    if input.UserInputType ~= Enum.UserInputType.MouseMovement
+    and input.UserInputType ~= Enum.UserInputType.Touch then return end
+    local vp   = workspace.CurrentCamera.ViewportSize
+    local newX = math.clamp(startPos.x + (input.Position.X - dragStart.x), 0, vp.X - W)
+    local newY = math.clamp(startPos.y + (input.Position.Y - dragStart.y), 0, vp.Y - H)
+    main.Position = UDim2.new(0, newX, 0, newY)
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+
 -- TP DOWN BUTTON
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/TP-DOWN-OPEN-SOURCE-FOR-YALL/refs/heads/main/l"))()
 
@@ -628,334 +965,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
  
-repeat task.wait() until game:IsLoaded()
 
-local RunService       = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local CoreGui          = game:GetService("CoreGui")
-local Players          = game:GetService("Players")
-
-local player = Players.LocalPlayer
-
-
-
-_G.SpeedBooster = _G.SpeedBooster or {}
-_G.SpeedBooster.NormalSpeed = _G.SpeedBooster.NormalSpeed or 59.2
-_G.SpeedBooster.StealSpeed  = _G.SpeedBooster.StealSpeed  or 29.6
-local SpeedBooster = _G.SpeedBooster   
-
-
-local pathActive           = false
-local lastFlatVel          = Vector3.zero
-local PATH_BASE_STOP       = 1.35
-local PATH_MIN_STOP        = 0.65
-local PATH_NEXT_POINT_BIAS = 0.45
-local PATH_SMOOTH_FACTOR   = 0.12
-
-local stealPath1 = {
-    {pos=Vector3.new(-470.6,-5.9, 34.4)},
-    {pos=Vector3.new(-484.2,-3.9, 21.4)},
-    {pos=Vector3.new(-475.6,-5.8, 29.3)},
-    {pos=Vector3.new(-473.4,-5.9,111.0)},
-}
-local stealPath2 = {
-    {pos=Vector3.new(-474.7,-5.9, 91.0)},
-    {pos=Vector3.new(-483.4,-3.9, 97.3)},
-    {pos=Vector3.new(-474.7,-5.9, 91.0)},
-    {pos=Vector3.new(-476.1,-5.5, 25.4)},
-}
-
-
-
-local function pathMoveToPoint(hrp, current, nextPoint, isSteal)
-    local conn
-    conn = RunService.Heartbeat:Connect(function()
-        if not pathActive then conn:Disconnect() hrp.AssemblyLinearVelocity = Vector3.zero return end
-        local speed  = isSteal and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
-        local pos    = hrp.Position
-        local target = Vector3.new(current.X, pos.Y, current.Z)
-        local dir    = target - pos
-        local dist   = dir.Magnitude
-        local stopDist = math.clamp(PATH_BASE_STOP - dist*0.04, PATH_MIN_STOP, PATH_BASE_STOP)
-        if dist <= stopDist then conn:Disconnect() hrp.AssemblyLinearVelocity = Vector3.zero return end
-        local moveDir = dir.Unit
-        if nextPoint then
-            local nextDir = (Vector3.new(nextPoint.X, pos.Y, nextPoint.Z) - pos).Unit
-            moveDir = (moveDir + nextDir * PATH_NEXT_POINT_BIAS).Unit
-        end
-        if lastFlatVel.Magnitude > 0.1 then
-            moveDir = (moveDir*(1-PATH_SMOOTH_FACTOR) + lastFlatVel.Unit*PATH_SMOOTH_FACTOR).Unit
-        end
-        local vel = Vector3.new(moveDir.X*speed, hrp.AssemblyLinearVelocity.Y, moveDir.Z*speed)
-        hrp.AssemblyLinearVelocity = vel
-        lastFlatVel = Vector3.new(vel.X, 0, vel.Z)
-    end)
-    while pathActive and
-        (Vector3.new(hrp.Position.X,0,hrp.Position.Z) -
-         Vector3.new(current.X,0,current.Z)).Magnitude > PATH_BASE_STOP
-    do RunService.Heartbeat:Wait() end
-end
-
-local function runStealPath(path)
-    local char = player.Character or player.CharacterAdded:Wait()
-    local hrpLocal = char:WaitForChild("HumanoidRootPart")
-    for i, p in ipairs(path) do
-        if not pathActive then return end
-        local nextP = path[i+1] and path[i+1].pos
-        pathMoveToPoint(hrpLocal, p.pos, nextP, i > 2)
-        task.wait()
-    end
-end
-
-local function startStealPath(path)
-    pathActive = true
-    task.spawn(function()
-        while pathActive do runStealPath(path) task.wait(0.1) end
-    end)
-end
-
-local function stopStealPath()
-    pathActive = false
-    local char = player.Character
-    local hrpLocal = char and char:FindFirstChild("HumanoidRootPart")
-    if hrpLocal then hrpLocal.AssemblyLinearVelocity = Vector3.zero end
-end
-
-
-local sg = Instance.new("ScreenGui")
-sg.Name            = "AutoPath_Standalone"
-sg.ResetOnSpawn    = false
-sg.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
-sg.Parent          = CoreGui
-
-local W, H = 168, 102
-
-local main = Instance.new("Frame", sg)
-main.Name                   = "Main"
-main.Size                   = UDim2.new(0, W, 0, H)
-main.Position               = UDim2.new(0, 15, 0.5, 0)
-main.BackgroundColor3       = Color3.fromRGB(25, 5, 40)
-main.BackgroundTransparency = 0.08
-main.BorderSizePixel        = 0
-main.Active                 = true
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
-
-
-local mainStroke = Instance.new("UIStroke", main)
-mainStroke.Thickness       = 2
-mainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-local shimGrad = Instance.new("UIGradient", mainStroke)
-shimGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0,    Color3.fromRGB(255,255,255)),
-    ColorSequenceKeypoint.new(0.20, Color3.fromRGB(210,160,255)),
-    ColorSequenceKeypoint.new(0.45, Color3.fromRGB(255,255,255)),
-    ColorSequenceKeypoint.new(0.55, Color3.fromRGB(255,255,255)),
-    ColorSequenceKeypoint.new(0.80, Color3.fromRGB(210,160,255)),
-    ColorSequenceKeypoint.new(1,    Color3.fromRGB(255,255,255)),
-})
-shimGrad.Transparency = NumberSequence.new({
-    NumberSequenceKeypoint.new(0,    0.80),
-    NumberSequenceKeypoint.new(0.20, 0.40),
-    NumberSequenceKeypoint.new(0.45, 0.85),
-    NumberSequenceKeypoint.new(0.55, 0.05),
-    NumberSequenceKeypoint.new(0.80, 0.40),
-    NumberSequenceKeypoint.new(1,    0.80),
-})
-shimGrad.Rotation = 0
-task.spawn(function()
-    while main.Parent do
-        shimGrad.Rotation = (shimGrad.Rotation + 1.2) % 360
-        task.wait(0.033)
-    end
-end)
-
-
-local header = Instance.new("Frame", main)
-header.Size                   = UDim2.new(1, 0, 0, 26)
-header.BackgroundColor3       = Color3.fromRGB(40, 10, 60)
-header.BackgroundTransparency = 0
-header.BorderSizePixel        = 0
-Instance.new("UICorner", header).CornerRadius = UDim.new(0, 10)
-local hFix = Instance.new("Frame", header)
-hFix.Size             = UDim2.new(1, 0, 0, 10)
-hFix.Position         = UDim2.new(0, 0, 1, -10)
-hFix.BackgroundColor3 = Color3.fromRGB(40, 10, 60)
-hFix.BorderSizePixel  = 0
-
-local titleLbl = Instance.new("TextLabel", header)
-titleLbl.Size                  = UDim2.new(1, -10, 1, 0)
-titleLbl.Position              = UDim2.new(0, 10, 0, 0)
-titleLbl.BackgroundTransparency = 1
-titleLbl.Text                  = "AUTO PATH"
-titleLbl.TextColor3            = Color3.fromRGB(255, 255, 255)
-titleLbl.Font                  = Enum.Font.GothamBlack
-titleLbl.TextSize              = 12
-titleLbl.TextXAlignment        = Enum.TextXAlignment.Left
-local tGrad = Instance.new("UIGradient", titleLbl)
-tGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0,   Color3.fromRGB(190,120,255)),
-    ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255,255,255)),
-    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255,255,255)),
-    ColorSequenceKeypoint.new(1,   Color3.fromRGB(190,120,255)),
-})
-tGrad.Rotation = 90
-task.spawn(function()
-    while titleLbl.Parent do tGrad.Rotation = (tGrad.Rotation + 0.8) % 360 task.wait(0.016) end
-end)
-
-
-local btnY   = 31
-local btnH   = 36
-local btnW   = 72
-
-
-local AutoLeftButton = Instance.new("TextButton", main)
-AutoLeftButton.Size              = UDim2.new(0, btnW, 0, btnH)
-AutoLeftButton.Position          = UDim2.new(0, 8, 0, btnY)
-AutoLeftButton.BackgroundColor3  = Color3.fromRGB(60, 20, 90)
-AutoLeftButton.BackgroundTransparency = 0.1
-AutoLeftButton.Text              = "AUTO\nLEFT"
-AutoLeftButton.TextColor3        = Color3.fromRGB(255, 255, 255)
-AutoLeftButton.Font              = Enum.Font.GothamBold
-AutoLeftButton.TextSize          = 11
-AutoLeftButton.AutoButtonColor   = false
-AutoLeftButton.ZIndex            = 3
-Instance.new("UICorner", AutoLeftButton).CornerRadius = UDim.new(0, 8)
-local lStroke = Instance.new("UIStroke", AutoLeftButton)
-lStroke.Color = Color3.fromRGB(150, 50, 255) lStroke.Thickness = 2
-
-
-local AutoRightButton = Instance.new("TextButton", main)
-AutoRightButton.Size              = UDim2.new(0, btnW, 0, btnH)
-AutoRightButton.Position          = UDim2.new(0, 88, 0, btnY)
-AutoRightButton.BackgroundColor3  = Color3.fromRGB(60, 20, 90)
-AutoRightButton.BackgroundTransparency = 0.1
-AutoRightButton.Text              = "AUTO\nRIGHT"
-AutoRightButton.TextColor3        = Color3.fromRGB(255, 255, 255)
-AutoRightButton.Font              = Enum.Font.GothamBold
-AutoRightButton.TextSize          = 11
-AutoRightButton.AutoButtonColor   = false
-AutoRightButton.ZIndex            = 3
-Instance.new("UICorner", AutoRightButton).CornerRadius = UDim.new(0, 8)
-local rStroke = Instance.new("UIStroke", AutoRightButton)
-rStroke.Color = Color3.fromRGB(150, 50, 255) rStroke.Thickness = 2
-
- 
-local modeRow = Instance.new("Frame", main)
-modeRow.Size                   = UDim2.new(1, -16, 0, 18)
-modeRow.Position               = UDim2.new(0, 8, 0, 73)
-modeRow.BackgroundColor3       = Color3.fromRGB(28, 10, 48)
-modeRow.BackgroundTransparency = 0.3
-modeRow.BorderSizePixel        = 0
-Instance.new("UICorner", modeRow).CornerRadius = UDim.new(0, 5)
-local modeStroke = Instance.new("UIStroke", modeRow)
-modeStroke.Thickness = 1
-modeStroke.Color     = Color3.fromRGB(140, 40, 220)
-
-local modePrefixLbl = Instance.new("TextLabel", modeRow)
-modePrefixLbl.Size                  = UDim2.new(0, 54, 1, 0)
-modePrefixLbl.Position              = UDim2.new(0, 6, 0, 0)
-modePrefixLbl.BackgroundTransparency = 1
-modePrefixLbl.Text                  = "MODE:"
-modePrefixLbl.TextColor3            = Color3.fromRGB(180, 130, 230)
-modePrefixLbl.Font                  = Enum.Font.GothamBold
-modePrefixLbl.TextSize              = 10
-modePrefixLbl.TextXAlignment        = Enum.TextXAlignment.Left
-
-
-
-local modeColors = {
-    NORMAL = Color3.fromRGB(100, 220, 120),
-    DESYNC = Color3.fromRGB(255, 200, 60),
-    LAGGER = Color3.fromRGB(255, 80, 80),
-}
-local modeValLbl = Instance.new("TextLabel", modeRow)
-modeValLbl.Size                  = UDim2.new(1, -64, 1, 0)
-modeValLbl.Position              = UDim2.new(0, 60, 0, 0)
-modeValLbl.BackgroundTransparency = 1
-modeValLbl.Text                  = "NORMAL"
-modeValLbl.TextColor3            = modeColors["NORMAL"]
-modeValLbl.Font                  = Enum.Font.GothamBlack
-modeValLbl.TextSize              = 10
-modeValLbl.TextXAlignment        = Enum.TextXAlignment.Left
-
-
-task.spawn(function()
-    local lastMode = ""
-    while modeValLbl.Parent do
-        local m = (typeof(_G.SpeedBooster) == "table" and _G.SpeedBooster.Mode) or "NORMAL"
-        if m ~= lastMode then
-            modeValLbl.Text       = m
-            modeValLbl.TextColor3 = modeColors[m] or Color3.fromRGB(210, 160, 255)
-            lastMode = m
-        end
-        task.wait(0.1)
-    end
-end)
-
-
-AutoLeftButton.MouseButton1Click:Connect(function()
-    if pathActive then
-        stopStealPath()
-        AutoLeftButton.BackgroundColor3  = Color3.fromRGB(60, 20, 90)
-        AutoRightButton.BackgroundColor3 = Color3.fromRGB(60, 20, 90)
-        lStroke.Color = Color3.fromRGB(150, 50, 255)
-        rStroke.Color = Color3.fromRGB(150, 50, 255)
-    else
-        stopStealPath()
-        AutoLeftButton.BackgroundColor3  = Color3.fromRGB(140, 40, 220)
-        AutoRightButton.BackgroundColor3 = Color3.fromRGB(60, 20, 90)
-        lStroke.Color = Color3.fromRGB(0, 220, 120)
-        rStroke.Color = Color3.fromRGB(150, 50, 255)
-        startStealPath(stealPath2)
-    end
-end)
-
-AutoRightButton.MouseButton1Click:Connect(function()
-    if pathActive then
-        stopStealPath()
-        AutoLeftButton.BackgroundColor3  = Color3.fromRGB(60, 20, 90)
-        AutoRightButton.BackgroundColor3 = Color3.fromRGB(60, 20, 90)
-        lStroke.Color = Color3.fromRGB(150, 50, 255)
-        rStroke.Color = Color3.fromRGB(150, 50, 255)
-    else
-        stopStealPath()
-        AutoLeftButton.BackgroundColor3  = Color3.fromRGB(60, 20, 90)
-        AutoRightButton.BackgroundColor3 = Color3.fromRGB(140, 40, 220)
-        lStroke.Color = Color3.fromRGB(150, 50, 255)
-        rStroke.Color = Color3.fromRGB(0, 220, 120)
-        startStealPath(stealPath1)
-    end
-end)
-
-
-local dragging, dragStart, startPos = false, nil, nil
-
-main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-        dragging  = true
-        dragStart = {x = input.Position.X, y = input.Position.Y}
-        startPos  = {x = main.Position.X.Offset, y = main.Position.Y.Offset}
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if not dragging or not dragStart or not startPos then return end
-    if input.UserInputType ~= Enum.UserInputType.MouseMovement
-    and input.UserInputType ~= Enum.UserInputType.Touch then return end
-    local vp   = workspace.CurrentCamera.ViewportSize
-    local newX = math.clamp(startPos.x + (input.Position.X - dragStart.x), 0, vp.X - W)
-    local newY = math.clamp(startPos.y + (input.Position.Y - dragStart.y), 0, vp.Y - H)
-    main.Position = UDim2.new(0, newX, 0, newY)
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end)
 -- end of auto path - speed booster
 -- new drop brainrot code my bro
 _G.DB = _G.DB or {}
@@ -1709,3 +1719,161 @@ local function showGUI()
     clampMainFrame()
 end
 -- end of insta reset
+-- simple anti rag
+local Players    = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local AntiRagdollConns = {}
+
+local function enableAntiRagdoll()
+    for _, c in pairs(AntiRagdollConns) do c:Disconnect() end
+    AntiRagdollConns = {}
+
+    local char     = player.Character or player.CharacterAdded:Wait()
+    local humanoid = char:WaitForChild("Humanoid")
+    local root     = char:WaitForChild("HumanoidRootPart")
+    local animator = humanoid:WaitForChild("Animator")
+
+
+    pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,     false) end)
+    pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,  false) end)
+    pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp,    false) end)
+
+    local recovering  = false
+    local lastVelocity = Vector3.zero
+
+    local BAD_STATES = {
+        [Enum.HumanoidStateType.Physics]     = true,
+        [Enum.HumanoidStateType.Ragdoll]     = true,
+        [Enum.HumanoidStateType.FallingDown] = true,
+        [Enum.HumanoidStateType.GettingUp]   = true,
+    }
+
+    local function isRagdollState()
+        return BAD_STATES[humanoid:GetState()] == true
+    end
+
+    local function cleanConstraints()
+        for _, obj in pairs(char:GetDescendants()) do
+            if obj:IsA("BallSocketConstraint") or obj:IsA("NoCollisionConstraint")
+            or obj:IsA("HingeConstraint") then
+                obj:Destroy()
+            elseif obj:IsA("Attachment") and (obj.Name == "A" or obj.Name == "B") then
+                obj:Destroy()
+            elseif obj:IsA("BodyVelocity") or obj:IsA("BodyPosition") or obj:IsA("BodyGyro") then
+                obj:Destroy()
+            elseif obj:IsA("Motor6D") then
+                obj.Enabled = true
+            end
+        end
+        
+
+        
+        for _, track in pairs(animator:GetPlayingAnimationTracks()) do
+            local name = (track.Animation and track.Animation.Name or ""):lower()
+            if name:find("rag") or name:find("fall") or name:find("hurt") or name:find("down") then
+                track:Stop(0)
+            end
+        end
+    end
+
+    local function reEnableControls()
+        pcall(function()
+            require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")):GetControls():Enable()
+        end)
+    end
+
+
+    
+    local function startRecovery()
+        if recovering then return end
+        recovering = true
+        task.spawn(function()
+            local endTime = tick() + 0.5
+            while tick() < endTime do
+                if isRagdollState() or humanoid:GetState() == Enum.HumanoidStateType.GettingUp then
+                    cleanConstraints()
+                    pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Running) end)
+                    
+                    
+                    local vel = root.AssemblyLinearVelocity
+                    if vel.Magnitude > 30 then
+                        root.AssemblyLinearVelocity = Vector3.new(0, math.min(vel.Y, 5), 0)
+                    end
+                    workspace.CurrentCamera.CameraSubject = humanoid
+                    reEnableControls()
+                end
+                
+
+                
+                pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,    false) end)
+                pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false) end)
+                task.wait(0.02)
+            end
+            recovering = false
+        end)
+    end
+
+
+    
+    table.insert(AntiRagdollConns, humanoid.StateChanged:Connect(function(_, newState)
+        if BAD_STATES[newState] then
+            startRecovery()
+        end
+    end))
+
+
+    
+    table.insert(AntiRagdollConns, RunService.Heartbeat:Connect(function()
+        if isRagdollState() then
+            startRecovery()
+            
+
+
+            local vel    = root.AssemblyLinearVelocity
+            local velDif = (vel - lastVelocity).Magnitude
+            if velDif > 50 and vel.Magnitude > 20 then
+                root.AssemblyLinearVelocity = Vector3.new(0, math.min(vel.Y, 5), 0)
+            end
+        end
+        lastVelocity = root.AssemblyLinearVelocity
+    end))
+
+
+    
+    table.insert(AntiRagdollConns, char.DescendantAdded:Connect(function(obj)
+        if obj:IsA("BallSocketConstraint") or obj:IsA("NoCollisionConstraint")
+        or obj:IsA("HingeConstraint") or obj:IsA("BodyVelocity")
+        or obj:IsA("BodyPosition") or obj:IsA("BodyGyro") then
+            task.defer(function()
+                if obj and obj.Parent then obj:Destroy() end
+            end)
+        elseif obj:IsA("Motor6D") then
+            task.defer(function()
+                if obj and obj.Parent then obj.Enabled = true end
+            end)
+        end
+    end))
+
+
+    
+    table.insert(AntiRagdollConns, player.CharacterAdded:Connect(function(newChar)
+        char      = newChar
+        humanoid  = newChar:WaitForChild("Humanoid")
+        root      = newChar:WaitForChild("HumanoidRootPart")
+        animator  = humanoid:WaitForChild("Animator")
+        lastVelocity = Vector3.zero
+        recovering   = false
+        reEnableControls()
+        cleanConstraints()
+        enableAntiRagdoll()
+    end))
+
+    reEnableControls()
+    cleanConstraints()
+end
+
+enableAntiRagdoll()
+
+-- end of anti rag
