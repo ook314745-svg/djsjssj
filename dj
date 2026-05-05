@@ -334,6 +334,8 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
+-- speed changer
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/changeer/refs/heads/main/obfuscated.lua%20(14).txt"))()
 
 -- TP DOWN BUTTON
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/TP-DOWN-OPEN-SOURCE-FOR-YALL/refs/heads/main/l"))()
@@ -1719,3 +1721,152 @@ local function showGUI()
     clampMainFrame()
 end
 -- end of insta reset
+-- simple antirag
+local Players    = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local AntiRagdollConns = {}
+
+local function enableAntiRagdoll()
+    for _, c in pairs(AntiRagdollConns) do c:Disconnect() end
+    AntiRagdollConns = {}
+
+    local char     = player.Character or player.CharacterAdded:Wait()
+    local humanoid = char:WaitForChild("Humanoid")
+    local root     = char:WaitForChild("HumanoidRootPart")
+    local animator = humanoid:WaitForChild("Animator")
+
+
+    pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,     false) end)
+    pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,  false) end)
+    pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp,    false) end)
+
+    local recovering  = false
+    local lastVelocity = Vector3.zero
+
+    local BAD_STATES = {
+        [Enum.HumanoidStateType.Physics]     = true,
+        [Enum.HumanoidStateType.Ragdoll]     = true,
+        [Enum.HumanoidStateType.FallingDown] = true,
+        [Enum.HumanoidStateType.GettingUp]   = true,
+    }
+
+    local function isRagdollState()
+        return BAD_STATES[humanoid:GetState()] == true
+    end
+
+    local function cleanConstraints()
+        for _, obj in pairs(char:GetDescendants()) do
+            if obj:IsA("BallSocketConstraint") or obj:IsA("NoCollisionConstraint")
+            or obj:IsA("HingeConstraint") then
+                obj:Destroy()
+            elseif obj:IsA("Attachment") and (obj.Name == "A" or obj.Name == "B") then
+                obj:Destroy()
+            elseif obj:IsA("BodyVelocity") or obj:IsA("BodyPosition") or obj:IsA("BodyGyro") then
+                obj:Destroy()
+            elseif obj:IsA("Motor6D") then
+                obj.Enabled = true
+            end
+        end
+       
+
+        for _, track in pairs(animator:GetPlayingAnimationTracks()) do
+            local name = (track.Animation and track.Animation.Name or ""):lower()
+            if name:find("rag") or name:find("fall") or name:find("hurt") or name:find("down") then
+                track:Stop(0)
+            end
+        end
+    end
+
+    local function reEnableControls()
+        pcall(function()
+            require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")):GetControls():Enable()
+        end)
+    end
+    
+    local function startRecovery()
+        if recovering then return end
+        recovering = true
+        task.spawn(function()
+            local endTime = tick() + 0.5
+            while tick() < endTime do
+                if isRagdollState() or humanoid:GetState() == Enum.HumanoidStateType.GettingUp then
+                    cleanConstraints()
+                    pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.Running) end)
+
+                    local vel = root.Velocity
+                    if vel.Magnitude > 30 then
+                        root.Velocity = Vector3.new(0, math.min(vel.Y, 5), 0)
+                    end
+                    workspace.CurrentCamera.CameraSubject = humanoid
+                    reEnableControls()
+                end
+
+                pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,    false) end)
+                pcall(function() humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false) end)
+                task.wait(0.02)
+            end
+            recovering = false
+        end)
+    end
+
+
+    
+    table.insert(AntiRagdollConns, humanoid.StateChanged:Connect(function(_, newState)
+        if BAD_STATES[newState] then
+            startRecovery()
+        end
+    end))
+
+    
+    table.insert(AntiRagdollConns, RunService.Heartbeat:Connect(function()
+        if isRagdollState() then
+            startRecovery()
+            
+
+            local vel    = root.Velocity
+            local velDif = (vel - lastVelocity).Magnitude
+            if velDif > 50 and vel.Magnitude > 20 then
+                root.Velocity = Vector3.new(0, math.min(vel.Y, 5), 0)
+            end
+        end
+        lastVelocity = root.Velocity
+    end))
+
+
+    
+    table.insert(AntiRagdollConns, char.DescendantAdded:Connect(function(obj)
+        if obj:IsA("BallSocketConstraint") or obj:IsA("NoCollisionConstraint")
+        or obj:IsA("HingeConstraint") or obj:IsA("BodyVelocity")
+        or obj:IsA("BodyPosition") or obj:IsA("BodyGyro") then
+            task.defer(function()
+                if obj and obj.Parent then obj:Destroy() end
+            end)
+        elseif obj:IsA("Motor6D") then
+            task.defer(function()
+                if obj and obj.Parent then obj.Enabled = true end
+            end)
+        end
+    end))
+
+
+    
+    table.insert(AntiRagdollConns, player.CharacterAdded:Connect(function(newChar)
+        char      = newChar
+        humanoid  = newChar:WaitForChild("Humanoid")
+        root      = newChar:WaitForChild("HumanoidRootPart")
+        animator  = humanoid:WaitForChild("Animator")
+        lastVelocity = Vector3.zero
+        recovering   = false
+        reEnableControls()
+        cleanConstraints()
+        enableAntiRagdoll()
+    end))
+
+    reEnableControls()
+    cleanConstraints()
+end
+
+enableAntiRagdoll()
+-- end of antirag
