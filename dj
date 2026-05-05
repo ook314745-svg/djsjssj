@@ -351,7 +351,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/FRHUBLA
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/FPS/refs/heads/main/BESTFPS"))()
 
 -- best aimbot 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/BESTAIMBOT/refs/heads/main/obfuscated.lua%20(11).txt"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/BESTAIMBOT/refs/heads/main/obfuscated.lua%20(12).txt"))()
 
 -- FR HUB Desync
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/desyncv2/refs/heads/main/obfuscated.lua%20(2).txt"))()
