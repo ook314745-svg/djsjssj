@@ -1870,3 +1870,40 @@ end
 
 enableAntiRagdoll()
 -- end of antirag
+-- simple hitbox expander
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local HITBOX_SIZE = Vector3.new(10, 10, 10)
+
+RunService.Heartbeat:Connect(function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            local root = p.Character:FindFirstChild("HumanoidRootPart")
+            if root then
+                pcall(function()
+                    root.Size = HITBOX_SIZE
+                    root.Transparency = 0.5
+                    root.CanCollide = false
+                end)
+            end
+        end
+    end
+end)
+
+Players.PlayerAdded:Connect(function(p)
+    p.CharacterAdded:Connect(function(char)
+        task.wait(0.5)
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if root then
+            pcall(function()
+                root.Size = HITBOX_SIZE
+                root.Transparency = 0.5
+                root.CanCollide = false
+            end)
+        end
+    end)
+end)
+-- end of hitbox expander
