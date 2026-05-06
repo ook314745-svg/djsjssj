@@ -337,14 +337,8 @@ end)
 -- speed changer
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/changeer/refs/heads/main/obfuscated.lua%20(14).txt"))()
 
--- TP DOWN BUTTON
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/TP-DOWN-OPEN-SOURCE-FOR-YALL/refs/heads/main/l"))()
-
 -- مصعد
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/evelatoropensource/refs/heads/main/zz"))()
-
--- New tp down
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/Newtpdown/refs/heads/main/Neww"))()
 
 -- FR HUB LAGGER
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/FRHUBLAGGER/refs/heads/main/obfuscated.lua%20(7).txt"))()
