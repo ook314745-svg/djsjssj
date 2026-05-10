@@ -347,7 +347,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/FRHUBLA
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/FPS/refs/heads/main/BESTFPS"))()
 
 -- best aimbot 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/BESTAIMBOT/refs/heads/main/obfuscated.lua%20(18).txt"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/BESTAIMBOT/refs/heads/main/obfuscated.lua%20(19).txt"))()
 
 
 -- float name
