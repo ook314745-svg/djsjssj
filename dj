@@ -1,3 +1,7 @@
+-- tp script
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/Tpscript/refs/heads/main/obfuscated.lua%20(21).txt"))()
+
+
 repeat task.wait() until game:IsLoaded()
 
 local RunService       = game:GetService("RunService")
@@ -306,25 +310,34 @@ end)
 
 
 
-local dragging, dragStart, startPos = false, nil, nil
+local dragging = false
+local dragStart
+local startPos
 
 main.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
-        dragging  = true
-        dragStart = {x = input.Position.X, y = input.Position.Y}
-        startPos  = {x = main.Position.X.Offset, y = main.Position.Y.Offset}
+
+        dragging = true
+        dragStart = input.Position
+        startPos = main.Position
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if not dragging or not dragStart or not startPos then return end
+    if not dragging or not dragStart then return end
+
     if input.UserInputType ~= Enum.UserInputType.MouseMovement
     and input.UserInputType ~= Enum.UserInputType.Touch then return end
-    local vp   = workspace.CurrentCamera.ViewportSize
-    local newX = math.clamp(startPos.x + (input.Position.X - dragStart.x), 0, vp.X - W)
-    local newY = math.clamp(startPos.y + (input.Position.Y - dragStart.y), 0, vp.Y - H)
-    main.Position = UDim2.new(0, newX, 0, newY)
+
+    local delta = input.Position - dragStart
+
+    main.Position = UDim2.new(
+        startPos.X.Scale,
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale,
+        startPos.Y.Offset + delta.Y
+    )
 end)
 
 UserInputService.InputEnded:Connect(function(input)
@@ -333,6 +346,7 @@ UserInputService.InputEnded:Connect(function(input)
         dragging = false
     end
 end)
+
 
 -- speed changer
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/changeer/refs/heads/main/obfuscated.lua%20(14).txt"))()
@@ -353,9 +367,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/BESTAIM
 -- float name
 loadstring(game:HttpGet("https://pastefy.app/R02mX1NW/raw"))()
 
-
 -- insta steal
-
 
 repeat task.wait() until game:IsLoaded()
 
@@ -851,25 +863,34 @@ PlusArea.MouseButton1Click:Connect(function()
 end)
 
 
-local dragging, dragStart, startPos = false, nil, nil
+local dragging = false
+local dragStart
+local startPos
 
 main.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
-        dragging  = true
-        dragStart = {x = input.Position.X, y = input.Position.Y}
-        startPos  = {x = main.Position.X.Offset, y = main.Position.Y.Offset}
+
+        dragging = true
+        dragStart = input.Position
+        startPos = main.Position
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if not dragging or not dragStart or not startPos then return end
+    if not dragging or not dragStart then return end
+
     if input.UserInputType ~= Enum.UserInputType.MouseMovement
     and input.UserInputType ~= Enum.UserInputType.Touch then return end
-    local vp   = workspace.CurrentCamera.ViewportSize
-    local newX = math.clamp(startPos.x + (input.Position.X - dragStart.x), 0, vp.X - W)
-    local newY = math.clamp(startPos.y + (input.Position.Y - dragStart.y), 0, vp.Y - H)
-    main.Position = UDim2.new(0, newX, 0, newY)
+
+    local delta = input.Position - dragStart
+
+    main.Position = UDim2.new(
+        startPos.X.Scale,
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale,
+        startPos.Y.Offset + delta.Y
+    )
 end)
 
 UserInputService.InputEnded:Connect(function(input)
