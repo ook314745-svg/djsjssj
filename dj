@@ -445,10 +445,8 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
-
-
--- speed changer
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/changeer/refs/heads/main/obfuscated.lua%20(14).txt"))()
+-- speed booster
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/bestspeedbooster/refs/heads/main/obfuscated.lua%20(22).txt"))()
 
 -- مصعد
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/evelatoropensource/refs/heads/main/zz"))()
