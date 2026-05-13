@@ -8,6 +8,7 @@ local RunService       = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui          = game:GetService("CoreGui")
 local Players          = game:GetService("Players")
+local HttpService      = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 
@@ -16,14 +17,34 @@ _G.SpeedBooster.NormalSpeed = _G.SpeedBooster.NormalSpeed or 59.2
 _G.SpeedBooster.StealSpeed  = _G.SpeedBooster.StealSpeed  or 29.6
 local SpeedBooster = _G.SpeedBooster
 
-
-
 local pathActive           = false
 local lastFlatVel          = Vector3.zero
 local PATH_BASE_STOP       = 1.35
 local PATH_MIN_STOP        = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR   = 0.12
+
+
+local pathCooldown = 0
+
+local CONFIG_PATH = "AutoPath_config.json"
+
+local function saveConfig()
+    if not writefile then return end
+    pcall(writefile, CONFIG_PATH, HttpService:JSONEncode({ cooldown = pathCooldown }))
+end
+
+local function loadConfig()
+    if not readfile or not isfile or not isfile(CONFIG_PATH) then return end
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(readfile(CONFIG_PATH))
+    end)
+    if ok and type(data) == "table" and tonumber(data.cooldown) then
+        pathCooldown = tonumber(data.cooldown)
+    end
+end
+
+loadConfig()
 
 local stealPath1 = {
     {pos=Vector3.new(-470.6,-5.9, 34.4)},
@@ -48,11 +69,7 @@ local function pathMoveToPoint(hrp, current, nextPoint, isSteal)
             if hum then hum:Move(Vector3.zero, false) end
             return
         end
-        
-
-        
         if hum and hum:GetState() == Enum.HumanoidStateType.Physics then return end
-
         local speed    = isSteal and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
         local pos      = hrp.Position
         local target   = Vector3.new(current.X, pos.Y, current.Z)
@@ -84,12 +101,18 @@ local function pathMoveToPoint(hrp, current, nextPoint, isSteal)
 end
 
 local function runStealPath(path)
-    local char    = player.Character or player.CharacterAdded:Wait()
+    local char     = player.Character or player.CharacterAdded:Wait()
     local hrpLocal = char:WaitForChild("HumanoidRootPart")
     for i, p in ipairs(path) do
         if not pathActive then return end
         local nextP = path[i+1] and path[i+1].pos
         pathMoveToPoint(hrpLocal, p.pos, nextP, i > 2)
+
+
+        if i == 2 and pathActive and pathCooldown > 0 then
+            task.wait(pathCooldown)
+        end
+
         task.wait()
     end
 end
@@ -109,14 +132,13 @@ local function stopStealPath()
 end
 
 
-
 local sg = Instance.new("ScreenGui")
 sg.Name           = "AutoPath_Standalone"
 sg.ResetOnSpawn   = false
 sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 sg.Parent         = CoreGui
 
-local W, H = 168, 102
+local W, H = 155, 145
 
 local main = Instance.new("Frame", sg)
 main.Name                   = "Main"
@@ -157,7 +179,7 @@ task.spawn(function()
 end)
 
 local header = Instance.new("Frame", main)
-header.Size                   = UDim2.new(1, 0, 0, 26)
+header.Size                   = UDim2.new(1, 0, 0, 24)
 header.BackgroundColor3       = Color3.fromRGB(40, 10, 60)
 header.BackgroundTransparency = 0
 header.BorderSizePixel        = 0
@@ -170,12 +192,12 @@ hFix.BorderSizePixel  = 0
 
 local titleLbl = Instance.new("TextLabel", header)
 titleLbl.Size                   = UDim2.new(1, -10, 1, 0)
-titleLbl.Position               = UDim2.new(0, 10, 0, 0)
+titleLbl.Position               = UDim2.new(0, 8, 0, 0)
 titleLbl.BackgroundTransparency = 1
 titleLbl.Text                   = "AUTO PATH"
 titleLbl.TextColor3             = Color3.fromRGB(255, 255, 255)
 titleLbl.Font                   = Enum.Font.GothamBlack
-titleLbl.TextSize               = 12
+titleLbl.TextSize               = 11
 titleLbl.TextXAlignment         = Enum.TextXAlignment.Left
 local tGrad = Instance.new("UIGradient", titleLbl)
 tGrad.Color = ColorSequence.new({
@@ -189,43 +211,44 @@ task.spawn(function()
     while titleLbl.Parent do tGrad.Rotation = (tGrad.Rotation + 0.8) % 360 task.wait(0.016) end
 end)
 
-local btnY = 31
-local btnH = 36
-local btnW = 72
+local btnY = 28
+local btnH = 30
+local btnW = 64
 
 local AutoLeftButton = Instance.new("TextButton", main)
 AutoLeftButton.Size                   = UDim2.new(0, btnW, 0, btnH)
-AutoLeftButton.Position               = UDim2.new(0, 8, 0, btnY)
+AutoLeftButton.Position               = UDim2.new(0, 6, 0, btnY)
 AutoLeftButton.BackgroundColor3       = Color3.fromRGB(60, 20, 90)
 AutoLeftButton.BackgroundTransparency = 0.1
 AutoLeftButton.Text                   = "AUTO\nLEFT"
 AutoLeftButton.TextColor3             = Color3.fromRGB(255, 255, 255)
 AutoLeftButton.Font                   = Enum.Font.GothamBold
-AutoLeftButton.TextSize               = 11
+AutoLeftButton.TextSize               = 10
 AutoLeftButton.AutoButtonColor        = false
 AutoLeftButton.ZIndex                 = 3
-Instance.new("UICorner", AutoLeftButton).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", AutoLeftButton).CornerRadius = UDim.new(0, 7)
 local lStroke = Instance.new("UIStroke", AutoLeftButton)
 lStroke.Color = Color3.fromRGB(150, 50, 255) lStroke.Thickness = 2
 
 local AutoRightButton = Instance.new("TextButton", main)
 AutoRightButton.Size                   = UDim2.new(0, btnW, 0, btnH)
-AutoRightButton.Position               = UDim2.new(0, 88, 0, btnY)
+AutoRightButton.Position               = UDim2.new(0, 6+btnW+5, 0, btnY)
 AutoRightButton.BackgroundColor3       = Color3.fromRGB(60, 20, 90)
 AutoRightButton.BackgroundTransparency = 0.1
 AutoRightButton.Text                   = "AUTO\nRIGHT"
 AutoRightButton.TextColor3             = Color3.fromRGB(255, 255, 255)
 AutoRightButton.Font                   = Enum.Font.GothamBold
-AutoRightButton.TextSize               = 11
+AutoRightButton.TextSize               = 10
 AutoRightButton.AutoButtonColor        = false
 AutoRightButton.ZIndex                 = 3
-Instance.new("UICorner", AutoRightButton).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", AutoRightButton).CornerRadius = UDim.new(0, 7)
 local rStroke = Instance.new("UIStroke", AutoRightButton)
 rStroke.Color = Color3.fromRGB(150, 50, 255) rStroke.Thickness = 2
 
+
 local modeRow = Instance.new("Frame", main)
-modeRow.Size                   = UDim2.new(1, -16, 0, 18)
-modeRow.Position               = UDim2.new(0, 8, 0, 73)
+modeRow.Size                   = UDim2.new(1, -12, 0, 15)
+modeRow.Position               = UDim2.new(0, 6, 0, 62)
 modeRow.BackgroundColor3       = Color3.fromRGB(28, 10, 48)
 modeRow.BackgroundTransparency = 0.3
 modeRow.BorderSizePixel        = 0
@@ -235,13 +258,13 @@ modeStroke.Thickness = 1
 modeStroke.Color     = Color3.fromRGB(140, 40, 220)
 
 local modePrefixLbl = Instance.new("TextLabel", modeRow)
-modePrefixLbl.Size                   = UDim2.new(0, 54, 1, 0)
-modePrefixLbl.Position               = UDim2.new(0, 6, 0, 0)
+modePrefixLbl.Size                   = UDim2.new(0, 46, 1, 0)
+modePrefixLbl.Position               = UDim2.new(0, 5, 0, 0)
 modePrefixLbl.BackgroundTransparency = 1
 modePrefixLbl.Text                   = "MODE:"
 modePrefixLbl.TextColor3             = Color3.fromRGB(180, 130, 230)
 modePrefixLbl.Font                   = Enum.Font.GothamBold
-modePrefixLbl.TextSize               = 10
+modePrefixLbl.TextSize               = 9
 modePrefixLbl.TextXAlignment         = Enum.TextXAlignment.Left
 
 local modeColors = {
@@ -250,13 +273,13 @@ local modeColors = {
     LAGGER = Color3.fromRGB(255, 80, 80),
 }
 local modeValLbl = Instance.new("TextLabel", modeRow)
-modeValLbl.Size                   = UDim2.new(1, -64, 1, 0)
-modeValLbl.Position               = UDim2.new(0, 60, 0, 0)
+modeValLbl.Size                   = UDim2.new(1, -54, 1, 0)
+modeValLbl.Position               = UDim2.new(0, 50, 0, 0)
 modeValLbl.BackgroundTransparency = 1
 modeValLbl.Text                   = "NORMAL"
 modeValLbl.TextColor3             = modeColors["NORMAL"]
 modeValLbl.Font                   = Enum.Font.GothamBlack
-modeValLbl.TextSize               = 10
+modeValLbl.TextSize               = 9
 modeValLbl.TextXAlignment         = Enum.TextXAlignment.Left
 
 task.spawn(function()
@@ -272,6 +295,90 @@ task.spawn(function()
     end
 end)
 
+
+local cdRow = Instance.new("Frame", main)
+cdRow.Size                   = UDim2.new(1, -12, 0, 20)
+cdRow.Position               = UDim2.new(0, 6, 0, 81)
+cdRow.BackgroundColor3       = Color3.fromRGB(28, 10, 48)
+cdRow.BackgroundTransparency = 0.3
+cdRow.BorderSizePixel        = 0
+Instance.new("UICorner", cdRow).CornerRadius = UDim.new(0, 5)
+local cdStroke = Instance.new("UIStroke", cdRow)
+cdStroke.Thickness = 1
+cdStroke.Color     = Color3.fromRGB(140, 40, 220)
+
+local cdLabel = Instance.new("TextLabel", cdRow)
+cdLabel.Size                   = UDim2.new(0, 30, 1, 0)
+cdLabel.Position               = UDim2.new(0, 5, 0, 0)
+cdLabel.BackgroundTransparency = 1
+cdLabel.Text                   = "CD:"
+cdLabel.TextColor3             = Color3.fromRGB(180, 130, 230)
+cdLabel.Font                   = Enum.Font.GothamBold
+cdLabel.TextSize               = 9
+cdLabel.TextXAlignment         = Enum.TextXAlignment.Left
+
+local cdBox = Instance.new("TextBox", cdRow)
+cdBox.Size             = UDim2.new(0, 42, 0, 14)
+cdBox.Position         = UDim2.new(0, 32, 0.5, -7)
+cdBox.BackgroundColor3 = Color3.fromRGB(50, 15, 80)
+cdBox.BorderSizePixel  = 0
+cdBox.Text             = tostring(pathCooldown)
+cdBox.TextColor3       = Color3.fromRGB(255, 255, 255)
+cdBox.Font             = Enum.Font.GothamBold
+cdBox.TextSize         = 9
+cdBox.ClearTextOnFocus = false
+Instance.new("UICorner", cdBox).CornerRadius = UDim.new(0, 4)
+local cdBoxStroke = Instance.new("UIStroke", cdBox)
+cdBoxStroke.Color = Color3.fromRGB(140, 40, 220) cdBoxStroke.Thickness = 1
+
+local saveBtn = Instance.new("TextButton", cdRow)
+saveBtn.Size              = UDim2.new(0, 34, 0, 14)
+saveBtn.Position          = UDim2.new(1, -36, 0.5, -7)
+saveBtn.BackgroundColor3  = Color3.fromRGB(50, 140, 80)
+saveBtn.BorderSizePixel   = 0
+saveBtn.Text              = "حفظ"
+saveBtn.TextColor3        = Color3.fromRGB(255, 255, 255)
+saveBtn.Font              = Enum.Font.GothamBold
+saveBtn.TextSize          = 8
+saveBtn.AutoButtonColor   = false
+Instance.new("UICorner", saveBtn).CornerRadius = UDim.new(0, 4)
+Instance.new("UIStroke", saveBtn).Color = Color3.fromRGB(0, 200, 100)
+
+local function applyCooldown(fromSave)
+    local val = tonumber(cdBox.Text)
+    if val and val >= 0 then
+        pathCooldown = val
+        cdBox.Text   = tostring(val)
+        if fromSave then
+            saveConfig()
+            saveBtn.BackgroundColor3 = Color3.fromRGB(30, 100, 60)
+            task.delay(0.5, function() saveBtn.BackgroundColor3 = Color3.fromRGB(50, 140, 80) end)
+        end
+    else
+        cdBox.Text = tostring(pathCooldown)
+    end
+end
+
+cdBox.FocusLost:Connect(function() applyCooldown(false) end)
+saveBtn.MouseButton1Click:Connect(function() applyCooldown(true) end)
+
+
+local sep = Instance.new("Frame", main)
+sep.Size             = UDim2.new(1, -12, 0, 1)
+sep.Position         = UDim2.new(0, 6, 0, 106)
+sep.BackgroundColor3 = Color3.fromRGB(80, 30, 120)
+sep.BorderSizePixel  = 0
+
+local noteLbl = Instance.new("TextLabel", main)
+noteLbl.Size                   = UDim2.new(1, -12, 0, 24)
+noteLbl.Position               = UDim2.new(0, 6, 0, 110)
+noteLbl.BackgroundTransparency = 1
+noteLbl.Text                   = "Note: انصحكم بـ cooldown 1.3"
+noteLbl.TextColor3             = Color3.fromRGB(160, 120, 200)
+noteLbl.Font                   = Enum.Font.Gotham
+noteLbl.TextSize               = 8
+noteLbl.TextXAlignment         = Enum.TextXAlignment.Left
+noteLbl.TextWrapped            = true
 
 
 AutoLeftButton.MouseButton1Click:Connect(function()
@@ -309,34 +416,25 @@ AutoRightButton.MouseButton1Click:Connect(function()
 end)
 
 
-
-local dragging = false
-local dragStart
-local startPos
+local dragging, dragStart, startPos = false, nil, nil
 
 main.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
-
-        dragging = true
+        dragging  = true
         dragStart = input.Position
-        startPos = main.Position
+        startPos  = main.Position
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
     if not dragging or not dragStart then return end
-
     if input.UserInputType ~= Enum.UserInputType.MouseMovement
     and input.UserInputType ~= Enum.UserInputType.Touch then return end
-
     local delta = input.Position - dragStart
-
     main.Position = UDim2.new(
-        startPos.X.Scale,
-        startPos.X.Offset + delta.X,
-        startPos.Y.Scale,
-        startPos.Y.Offset + delta.Y
+        startPos.X.Scale, startPos.X.Offset + delta.X,
+        startPos.Y.Scale, startPos.Y.Offset + delta.Y
     )
 end)
 
@@ -346,6 +444,7 @@ UserInputService.InputEnded:Connect(function(input)
         dragging = false
     end
 end)
+
 
 
 -- speed changer
