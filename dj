@@ -422,7 +422,7 @@ if player.Character then setupCharacter(player.Character) end
 player.CharacterAdded:Connect(setupCharacter)
 
 
-InstaSteal = { Radius = 52, Connection = nil }
+InstaSteal = { Radius = 60, Connection = nil }
 
 local allAnimalsCache    = {}
 local PromptMemoryCache  = {}
@@ -430,6 +430,9 @@ local InternalStealCache = {}
 local IsStealing         = false
 
 local ProgressBarFill = nil
+
+local PAUSE_AT   = 1.0  
+local CLOSE_DIST = 10    
 
 
 
@@ -458,13 +461,27 @@ local function scanSinglePlot(plot)
     local podiums = plot:FindFirstChild("AnimalPodiums")
     if not podiums then return end
     for _, podium in ipairs(podiums:GetChildren()) do
-        if podium:IsA("Model") and podium:FindFirstChild("Base") then
-            table.insert(allAnimalsCache, {
-                plot          = plot.Name,
-                slot          = podium.Name,
-                worldPosition = podium:GetPivot().Position,
-                uid           = plot.Name .. "_" .. podium.Name,
-            })
+        if podium:IsA("Model") then
+            local base   = podium:FindFirstChild("Base")
+            local spawn  = base and base:FindFirstChild("Spawn")
+            local attach = spawn and spawn:FindFirstChild("PromptAttachment")
+            if attach then
+                local hasAnimal = false
+                for _, p in ipairs(attach:GetChildren()) do
+                    if p:IsA("ProximityPrompt") and p.Enabled then
+                        hasAnimal = true
+                        break
+                    end
+                end
+                if hasAnimal then
+                    table.insert(allAnimalsCache, {
+                        plot          = plot.Name,
+                        slot          = podium.Name,
+                        worldPosition = podium:GetPivot().Position,
+                        uid           = plot.Name .. "_" .. podium.Name,
+                    })
+                end
+            end
         end
     end
 end
@@ -545,7 +562,7 @@ local function buildStealCallbacks(prompt)
     end
 end
 
-local function executeInternalStealAsync(prompt)
+local function executeInternalStealAsync(prompt, animalData)
     local data = InternalStealCache[prompt]
     if not data or not data.ready then return false end
     data.ready = false
@@ -554,24 +571,72 @@ local function executeInternalStealAsync(prompt)
         if #data.holdCallbacks > 0 then
             for _, fn in ipairs(data.holdCallbacks) do task.spawn(fn) end
         end
-        local startTime = tick()
         local duration  = 1.3
-        while tick() - startTime < duration do
-            local progress = (tick() - startTime) / duration
+        local completed = false
+        while not completed do
+            local startTime = tick()
+            while tick() - startTime < PAUSE_AT do
+                local progress = (tick() - startTime) / duration
+                if ProgressBarFill then
+                    TweenService:Create(ProgressBarFill,
+                        TweenInfo.new(0.05),
+                        {Size = UDim2.new(progress, 0, 1, 0)}
+                    ):Play()
+                end
+                task.wait(0.05)
+            end
             if ProgressBarFill then
                 TweenService:Create(ProgressBarFill,
                     TweenInfo.new(0.05),
-                    {Size = UDim2.new(progress, 0, 1, 0)}
+                    {Size = UDim2.new(PAUSE_AT / duration, 0, 1, 0)}
                 ):Play()
             end
-            task.wait(0.05)
+            local playerArrived = false
+            while not playerArrived do
+                local h = getHRP()
+                if not h or not animalData then
+                    completed = true
+                    break
+                end
+                if (h.Position - animalData.worldPosition).Magnitude <= CLOSE_DIST then
+                    playerArrived = true
+                else
+                    task.wait(0.05)
+                end
+            end
+            if completed then break end
+            local resumeStart = tick()
+            local remaining   = duration - PAUSE_AT
+            local fled        = false
+            while tick() - resumeStart < remaining do
+                local h2 = getHRP()
+                if h2 and (h2.Position - animalData.worldPosition).Magnitude > CLOSE_DIST then
+                    fled = true
+                    break
+                end
+                local progress = (PAUSE_AT + (tick() - resumeStart)) / duration
+                if ProgressBarFill then
+                    TweenService:Create(ProgressBarFill,
+                        TweenInfo.new(0.05),
+                        {Size = UDim2.new(progress, 0, 1, 0)}
+                    ):Play()
+                end
+                task.wait(0.05)
+            end
+            if fled then
+                if ProgressBarFill then
+                    ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
+                end
+            else
+                completed = true
+            end
         end
         if #data.triggerCallbacks > 0 then
             for _, fn in ipairs(data.triggerCallbacks) do task.spawn(fn) end
         end
         task.wait(0.01)
         data.ready = true
-        task.wait(0.1)
+        task.wait(0.01)
         if ProgressBarFill then
             ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
         end
@@ -580,11 +645,11 @@ local function executeInternalStealAsync(prompt)
     return true
 end
 
-local function attemptSteal(prompt)
+local function attemptSteal(prompt, animalData)
     if not prompt or not prompt.Parent then return false end
     buildStealCallbacks(prompt)
     if not InternalStealCache[prompt] then return false end
-    return executeInternalStealAsync(prompt)
+    return executeInternalStealAsync(prompt, animalData)
 end
 
 local function startStealLoop()
@@ -597,7 +662,7 @@ local function startStealLoop()
         if not prompt or not prompt.Parent then
             prompt = findProximityPromptForAnimal(targetAnimal)
         end
-        if prompt then attemptSteal(prompt) end
+        if prompt then attemptSteal(prompt, targetAnimal) end
     end)
 end
 
@@ -926,7 +991,6 @@ UserInputService.InputEnded:Connect(function(input)
         dragging = false
     end
 end)
-
 -- end of insta steal
 -- the fov
 local player = game.Players.LocalPlayer
