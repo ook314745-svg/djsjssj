@@ -123,7 +123,7 @@ local function stopStealPath()
     if hum then hum:Move(Vector3.zero, false) end
 end
 
--- ─── UI (compact) ────────────────────────────────────────────────────────────
+
 local sg = Instance.new("ScreenGui")
 sg.Name           = "AutoPath_Standalone"
 sg.ResetOnSpawn   = false
@@ -170,7 +170,7 @@ task.spawn(function()
     end
 end)
 
--- Header
+
 local header = Instance.new("Frame", main)
 header.Size                   = UDim2.new(1, 0, 0, 22)
 header.BackgroundColor3       = Color3.fromRGB(40, 10, 60)
@@ -202,7 +202,7 @@ task.spawn(function()
     while titleLbl.Parent do tGrad.Rotation = (tGrad.Rotation + 0.8) % 360 task.wait(0.016) end
 end)
 
--- Buttons row
+
 local btnY = 26
 local btnH = 26
 local btnW = 60
@@ -237,7 +237,7 @@ Instance.new("UICorner", AutoRightButton).CornerRadius = UDim.new(0, 7)
 local rStroke = Instance.new("UIStroke", AutoRightButton)
 rStroke.Color = Color3.fromRGB(150, 50, 255) rStroke.Thickness = 2
 
--- Mode row
+
 local modeRow = Instance.new("Frame", main)
 modeRow.Size             = UDim2.new(1, -10, 0, 13)
 modeRow.Position         = UDim2.new(0, 5, 0, btnY + btnH + 4)
@@ -275,7 +275,7 @@ task.spawn(function()
     end
 end)
 
--- Cooldown row
+
 local cdRowY = btnY + btnH + 4 + 13 + 4
 local cdRow = Instance.new("Frame", main)
 cdRow.Size             = UDim2.new(1, -10, 0, 18)
@@ -327,7 +327,7 @@ end
 cdBox.FocusLost:Connect(function() applyCooldown(false) end)
 saveBtn.MouseButton1Click:Connect(function() applyCooldown(true) end)
 
--- Buttons logic
+
 AutoLeftButton.MouseButton1Click:Connect(function()
     if pathActive then
         stopStealPath()
@@ -358,7 +358,7 @@ AutoRightButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Drag
+
 local dragging, dragStart, startPos = false, nil, nil
 main.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -399,7 +399,6 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/BESTAIM
 loadstring(game:HttpGet("https://pastefy.app/R02mX1NW/raw"))()
 
 -- insta steal
-
 repeat task.wait() until game:IsLoaded()
 
 local TweenService       = game:GetService("TweenService")
@@ -422,7 +421,7 @@ if player.Character then setupCharacter(player.Character) end
 player.CharacterAdded:Connect(setupCharacter)
 
 
-InstaSteal = { Radius = 60, Connection = nil }
+InstaSteal = { Radius = 51, Connection = nil }
 
 local allAnimalsCache    = {}
 local PromptMemoryCache  = {}
@@ -562,6 +561,8 @@ local function buildStealCallbacks(prompt)
     end
 end
 
+local CRAWL_SPEED = 0.01  
+
 local function executeInternalStealAsync(prompt, animalData)
     local data = InternalStealCache[prompt]
     if not data or not data.ready then return false end
@@ -585,12 +586,7 @@ local function executeInternalStealAsync(prompt, animalData)
                 end
                 task.wait(0.05)
             end
-            if ProgressBarFill then
-                TweenService:Create(ProgressBarFill,
-                    TweenInfo.new(0.05),
-                    {Size = UDim2.new(PAUSE_AT / duration, 0, 1, 0)}
-                ):Play()
-            end
+            local crawlProgress = PAUSE_AT / duration
             local playerArrived = false
             while not playerArrived do
                 local h = getHRP()
@@ -601,24 +597,32 @@ local function executeInternalStealAsync(prompt, animalData)
                 if (h.Position - animalData.worldPosition).Magnitude <= CLOSE_DIST then
                     playerArrived = true
                 else
+                    crawlProgress = math.min(crawlProgress + CRAWL_SPEED * 0.05, 0.99)
+                    if ProgressBarFill then
+                        TweenService:Create(ProgressBarFill,
+                            TweenInfo.new(0.05),
+                            {Size = UDim2.new(crawlProgress, 0, 1, 0)}
+                        ):Play()
+                    end
                     task.wait(0.05)
                 end
             end
             if completed then break end
-            local resumeStart = tick()
-            local remaining   = duration - PAUSE_AT
-            local fled        = false
+            local resumeStart      = tick()
+            local progressAtResume = crawlProgress
+            local remaining        = (1 - crawlProgress) * duration
+            local fled             = false
             while tick() - resumeStart < remaining do
                 local h2 = getHRP()
                 if h2 and (h2.Position - animalData.worldPosition).Magnitude > CLOSE_DIST then
                     fled = true
                     break
                 end
-                local progress = (PAUSE_AT + (tick() - resumeStart)) / duration
+                local progress = progressAtResume + (tick() - resumeStart) / duration
                 if ProgressBarFill then
                     TweenService:Create(ProgressBarFill,
                         TweenInfo.new(0.05),
-                        {Size = UDim2.new(progress, 0, 1, 0)}
+                        {Size = UDim2.new(math.min(progress, 1), 0, 1, 0)}
                     ):Play()
                 end
                 task.wait(0.05)
