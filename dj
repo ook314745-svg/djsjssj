@@ -410,16 +410,26 @@ local ReplicatedStorage  = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 
+local CARRY_ANIM_ID = "71186871415348"
 
 local character, hrp, hum
+local stealGeneration = 0
+
 local function setupCharacter(char)
+    stealGeneration = stealGeneration + 1
     character = char
     hrp  = char:WaitForChild("HumanoidRootPart")
     hum  = char:WaitForChild("Humanoid")
 end
 if player.Character then setupCharacter(player.Character) end
-player.CharacterAdded:Connect(setupCharacter)
-
+player.CharacterAdded:Connect(function(char)
+    setupCharacter(char)
+    IsStealing = false
+    for _, data in pairs(InternalStealCache) do
+        data.ready = true
+    end
+    PromptMemoryCache = {}
+end)
 
 InstaSteal = { Radius = 51, Connection = nil }
 
@@ -427,18 +437,32 @@ local allAnimalsCache    = {}
 local PromptMemoryCache  = {}
 local InternalStealCache = {}
 local IsStealing         = false
+local lastAttemptTime    = {}
 
 local ProgressBarFill = nil
 
-local PAUSE_AT   = 1.0  
-local CLOSE_DIST = 10    
-
-
+local PAUSE_AT   = 1.0
+local CLOSE_DIST = 10
 
 local function getHRP()
     local char = player.Character
     if not char then return nil end
     return char:FindFirstChild("HumanoidRootPart")
+end
+
+local function isInCarryState()
+    local char = player.Character
+    if not char then return false end
+    local h = char:FindFirstChildOfClass("Humanoid")
+    if not h then return false end
+    local a = h:FindFirstChildOfClass("Animator")
+    if not a then return false end
+    for _, t in pairs(a:GetPlayingAnimationTracks()) do
+        if t.Animation and string.find(t.Animation.AnimationId, CARRY_ANIM_ID) then
+            return true
+        end
+    end
+    return false
 end
 
 local function isMyBase(plotName)
@@ -538,8 +562,9 @@ local function getNearestAnimal()
 end
 
 local function buildStealCallbacks(prompt)
-    if InternalStealCache[prompt] then return end
-    local data = { holdCallbacks = {}, triggerCallbacks = {}, ready = true }
+    local existing = InternalStealCache[prompt]
+    if existing and (existing.ready or not existing.stale) then return end
+    local data = { holdCallbacks = {}, triggerCallbacks = {}, ready = true, stale = false }
     local ok1, conns1 = pcall(getconnections, prompt.PromptButtonHoldBegan)
     if ok1 and type(conns1) == "table" then
         for _, conn in ipairs(conns1) do
@@ -561,22 +586,59 @@ local function buildStealCallbacks(prompt)
     end
 end
 
-local CRAWL_SPEED = 0.01  
+local CRAWL_SPEED = 0.01
 
-local function executeInternalStealAsync(prompt, animalData)
+local function abortSteal(data, uid)
+    if ProgressBarFill then
+        ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
+    end
+    data.ready = true
+    data.stale = true
+    IsStealing = false
+    if uid then
+        lastAttemptTime[uid] = tick()
+        InternalStealCache[PromptMemoryCache[uid]] = nil
+        PromptMemoryCache[uid] = nil
+    end
+end
+
+local function shouldAbort(capturedGen)
+    return capturedGen ~= stealGeneration or isInCarryState()
+end
+
+local function executeInternalStealAsync(prompt, animalData, capturedGen)
     local data = InternalStealCache[prompt]
     if not data or not data.ready then return false end
     data.ready = false
+    data.stale = false
     IsStealing = true
     task.spawn(function()
+        if shouldAbort(capturedGen) then
+            abortSteal(data, animalData and animalData.uid)
+            return
+        end
         if #data.holdCallbacks > 0 then
             for _, fn in ipairs(data.holdCallbacks) do task.spawn(fn) end
         end
-        local duration  = 1.3
-        local completed = false
-        while not completed do
+        local duration   = 1.3
+        local completed  = false
+        local outOfRange = false
+        while not completed and not outOfRange do
+            if shouldAbort(capturedGen) then
+                outOfRange = true
+                break
+            end
             local startTime = tick()
             while tick() - startTime < PAUSE_AT do
+                if shouldAbort(capturedGen) then
+                    outOfRange = true
+                    break
+                end
+                local h = getHRP()
+                if not h or not animalData or (h.Position - animalData.worldPosition).Magnitude > InstaSteal.Radius then
+                    outOfRange = true
+                    break
+                end
                 local progress = (tick() - startTime) / duration
                 if ProgressBarFill then
                     TweenService:Create(ProgressBarFill,
@@ -586,15 +648,25 @@ local function executeInternalStealAsync(prompt, animalData)
                 end
                 task.wait(0.05)
             end
+            if outOfRange then break end
             local crawlProgress = PAUSE_AT / duration
             local playerArrived = false
             while not playerArrived do
+                if shouldAbort(capturedGen) then
+                    outOfRange = true
+                    break
+                end
                 local h = getHRP()
                 if not h or not animalData then
                     completed = true
                     break
                 end
-                if (h.Position - animalData.worldPosition).Magnitude <= CLOSE_DIST then
+                local dist = (h.Position - animalData.worldPosition).Magnitude
+                if dist > InstaSteal.Radius then
+                    outOfRange = true
+                    break
+                end
+                if dist <= CLOSE_DIST then
                     playerArrived = true
                 else
                     crawlProgress = math.min(crawlProgress + CRAWL_SPEED * 0.05, 0.99)
@@ -607,16 +679,27 @@ local function executeInternalStealAsync(prompt, animalData)
                     task.wait(0.05)
                 end
             end
-            if completed then break end
+            if outOfRange or completed then break end
             local resumeStart      = tick()
             local progressAtResume = crawlProgress
             local remaining        = (1 - crawlProgress) * duration
             local fled             = false
             while tick() - resumeStart < remaining do
-                local h2 = getHRP()
-                if h2 and (h2.Position - animalData.worldPosition).Magnitude > CLOSE_DIST then
-                    fled = true
+                if shouldAbort(capturedGen) then
+                    outOfRange = true
                     break
+                end
+                local h2 = getHRP()
+                if h2 then
+                    local dist2 = (h2.Position - animalData.worldPosition).Magnitude
+                    if dist2 > InstaSteal.Radius then
+                        outOfRange = true
+                        break
+                    end
+                    if dist2 > CLOSE_DIST then
+                        fled = true
+                        break
+                    end
                 end
                 local progress = progressAtResume + (tick() - resumeStart) / duration
                 if ProgressBarFill then
@@ -627,6 +710,7 @@ local function executeInternalStealAsync(prompt, animalData)
                 end
                 task.wait(0.05)
             end
+            if outOfRange then break end
             if fled then
                 if ProgressBarFill then
                     ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
@@ -634,6 +718,10 @@ local function executeInternalStealAsync(prompt, animalData)
             else
                 completed = true
             end
+        end
+        if outOfRange then
+            abortSteal(data, animalData and animalData.uid)
+            return
         end
         if #data.triggerCallbacks > 0 then
             for _, fn in ipairs(data.triggerCallbacks) do task.spawn(fn) end
@@ -645,21 +733,30 @@ local function executeInternalStealAsync(prompt, animalData)
             ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
         end
         IsStealing = false
+        if animalData then
+            lastAttemptTime[animalData.uid] = tick()
+        end
     end)
     return true
 end
 
+local STEAL_COOLDOWN = 0.1
+
 local function attemptSteal(prompt, animalData)
     if not prompt or not prompt.Parent then return false end
+    if animalData and lastAttemptTime[animalData.uid] then
+        if tick() - lastAttemptTime[animalData.uid] < STEAL_COOLDOWN then return false end
+    end
     buildStealCallbacks(prompt)
     if not InternalStealCache[prompt] then return false end
-    return executeInternalStealAsync(prompt, animalData)
+    return executeInternalStealAsync(prompt, animalData, stealGeneration)
 end
 
 local function startStealLoop()
     if InstaSteal.Connection then InstaSteal.Connection:Disconnect() end
     InstaSteal.Connection = RunService.Heartbeat:Connect(function()
         if IsStealing then return end
+        if isInCarryState() then return end
         local targetAnimal = getNearestAnimal()
         if not targetAnimal then return end
         local prompt = PromptMemoryCache[targetAnimal.uid]
@@ -692,7 +789,6 @@ main.BorderSizePixel        = 0
 main.Active                 = true
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
 
-
 local mainStroke = Instance.new("UIStroke", main)
 mainStroke.Thickness       = 2
 mainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -722,7 +818,6 @@ task.spawn(function()
     end
 end)
 
-
 local headerH = 30
 
 local header = Instance.new("Frame", main)
@@ -736,7 +831,6 @@ hFix.Size             = UDim2.new(1, 0, 0, 10)
 hFix.Position         = UDim2.new(0, 0, 1, -10)
 hFix.BackgroundColor3 = Color3.fromRGB(40, 10, 60)
 hFix.BorderSizePixel  = 0
-
 
 local titleLbl = Instance.new("TextLabel", header)
 titleLbl.Size                  = UDim2.new(1, -60, 1, 0)
@@ -770,14 +864,12 @@ task.spawn(function()
     end
 end)
 
-
 local statusDot = Instance.new("Frame", header)
 statusDot.Size             = UDim2.new(0, 9, 0, 9)
 statusDot.Position         = UDim2.new(1, -26, 0.5, -4)
 statusDot.BackgroundColor3 = Color3.fromRGB(0, 255, 120)
 statusDot.BorderSizePixel  = 0
 Instance.new("UICorner", statusDot).CornerRadius = UDim.new(1, 0)
-
 
 task.spawn(function()
     while statusDot.Parent do
@@ -790,7 +882,7 @@ end)
 
 local onLbl = Instance.new("TextLabel", header)
 onLbl.Size                  = UDim2.new(0, 40, 1, 0)
-onLbl.Position = UDim2.new(1, -75, 0, 0)
+onLbl.Position              = UDim2.new(1, -75, 0, 0)
 onLbl.BackgroundTransparency = 1
 onLbl.Text                  = "شغال"
 onLbl.TextColor3            = Color3.fromRGB(0, 255, 120)
@@ -798,13 +890,11 @@ onLbl.Font                  = Enum.Font.GothamBold
 onLbl.TextSize              = 11
 onLbl.TextXAlignment        = Enum.TextXAlignment.Right
 
-
 local content = Instance.new("Frame", main)
 content.Size                  = UDim2.new(1, 0, 1, -headerH)
 content.Position              = UDim2.new(0, 0, 0, headerH)
 content.BackgroundTransparency = 1
 content.BorderSizePixel       = 0
-
 
 local RadiusLabel = Instance.new("TextLabel", content)
 RadiusLabel.Size              = UDim2.new(0, 65, 0, 18)
@@ -816,20 +906,18 @@ RadiusLabel.Font              = Enum.Font.GothamBold
 RadiusLabel.TextSize          = 11
 RadiusLabel.TextXAlignment    = Enum.TextXAlignment.Left
 
-
 local MinusArea = Instance.new("TextButton", content)
 MinusArea.Size              = UDim2.new(0, 26, 0, 20)
 MinusArea.Position          = UDim2.new(1, -80, 0, 4)
 MinusArea.BackgroundColor3  = Color3.fromRGB(50, 15, 80)
 MinusArea.BorderSizePixel   = 0
-MinusArea.Text              = "−"
+MinusArea.Text              = "-"
 MinusArea.TextColor3        = Color3.fromRGB(210, 160, 255)
 MinusArea.Font              = Enum.Font.GothamBold
 MinusArea.TextSize          = 14
 Instance.new("UICorner", MinusArea).CornerRadius = UDim.new(0, 5)
 local mStroke = Instance.new("UIStroke", MinusArea)
 mStroke.Color = Color3.fromRGB(140, 40, 220) mStroke.Thickness = 1
-
 
 local RadiusValue = Instance.new("TextLabel", content)
 RadiusValue.Size              = UDim2.new(0, 22, 0, 20)
@@ -840,7 +928,6 @@ RadiusValue.TextColor3        = Color3.fromRGB(255, 255, 255)
 RadiusValue.Font              = Enum.Font.GothamBold
 RadiusValue.TextSize          = 13
 RadiusValue.TextXAlignment    = Enum.TextXAlignment.Center
-
 
 local PlusArea = Instance.new("TextButton", content)
 PlusArea.Size              = UDim2.new(0, 26, 0, 20)
@@ -855,14 +942,12 @@ Instance.new("UICorner", PlusArea).CornerRadius = UDim.new(0, 5)
 local pStroke = Instance.new("UIStroke", PlusArea)
 pStroke.Color = Color3.fromRGB(140, 40, 220) pStroke.Thickness = 1
 
-
 local ProgressBarBg = Instance.new("Frame", content)
 ProgressBarBg.Size             = UDim2.new(1, -20, 0, 18)
 ProgressBarBg.Position         = UDim2.new(0, 10, 0, 28)
 ProgressBarBg.BackgroundColor3 = Color3.fromRGB(10, 3, 20)
 ProgressBarBg.BorderSizePixel  = 0
 Instance.new("UICorner", ProgressBarBg).CornerRadius = UDim.new(1, 0)
-
 
 local bgStroke = Instance.new("UIStroke", ProgressBarBg)
 bgStroke.Thickness = 1
@@ -881,13 +966,11 @@ task.spawn(function()
     end
 end)
 
-
 ProgressBarFill = Instance.new("Frame", ProgressBarBg)
 ProgressBarFill.Size             = UDim2.new(0, 0, 1, 0)
 ProgressBarFill.BackgroundColor3 = Color3.fromRGB(140, 40, 220)
 ProgressBarFill.BorderSizePixel  = 0
 Instance.new("UICorner", ProgressBarFill).CornerRadius = UDim.new(1, 0)
-
 
 local fillGrad = Instance.new("UIGradient", ProgressBarFill)
 fillGrad.Color = ColorSequence.new({
@@ -910,7 +993,6 @@ task.spawn(function()
     end
 end)
 
-
 local fillShine = Instance.new("Frame", ProgressBarFill)
 fillShine.Size                  = UDim2.new(1, 0, 0.45, 0)
 fillShine.Position              = UDim2.new(0, 0, 0, 0)
@@ -918,7 +1000,6 @@ fillShine.BackgroundColor3      = Color3.fromRGB(255, 255, 255)
 fillShine.BackgroundTransparency = 0.72
 fillShine.BorderSizePixel       = 0
 Instance.new("UICorner", fillShine).CornerRadius = UDim.new(1, 0)
-
 
 local sweepFrame = Instance.new("Frame", ProgressBarFill)
 sweepFrame.Size                  = UDim2.new(0.35, 0, 1, 0)
@@ -940,13 +1021,12 @@ sweepGrad.Transparency = NumberSequence.new({
 })
 task.spawn(function()
     while sweepFrame.Parent do
-        local t  = tick() % 1.5
+        local t   = tick() % 1.5
         local pct = t / 1.5
         sweepFrame.Position = UDim2.new(pct * 1.35 - 0.35, 0, 0, 0)
         task.wait(0.016)
     end
 end)
-
 
 MinusArea.MouseButton1Click:Connect(function()
     if InstaSteal.Radius > 1 then
@@ -961,7 +1041,6 @@ PlusArea.MouseButton1Click:Connect(function()
         RadiusValue.Text  = tostring(InstaSteal.Radius)
     end
 end)
-
 
 local dragging = false
 local dragStart
@@ -995,6 +1074,7 @@ UserInputService.InputEnded:Connect(function(input)
         dragging = false
     end
 end)
+
 -- end of insta steal
 -- the fov
 local player = game.Players.LocalPlayer
