@@ -2046,9 +2046,12 @@ local TBH    = math.floor(32  * GS)
 local CONT_Y = HDR + TBH
 local CR     = math.floor(14  * GS)
 
+local _uiLocked = false
+
 local function makeDraggable(frame)
         local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
         frame.InputBegan:Connect(function(inp)
+                if _uiLocked then return end
                 if inp.UserInputType == Enum.UserInputType.Touch
                         or inp.UserInputType == Enum.UserInputType.MouseButton1 then
                         dragging = true; dragStart = inp.Position; startPos = frame.Position
@@ -2058,12 +2061,14 @@ local function makeDraggable(frame)
                 end
         end)
         frame.InputChanged:Connect(function(inp)
+                if _uiLocked then dragging = false; return end
                 if inp.UserInputType == Enum.UserInputType.Touch
                         or inp.UserInputType == Enum.UserInputType.MouseMovement then
                         dragInput = inp
                 end
         end)
         UIS.InputChanged:Connect(function(inp)
+                if _uiLocked then dragging = false; return end
                 if inp == dragInput and dragging then
                         local d = inp.Position - dragStart
                         frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
@@ -2465,6 +2470,10 @@ end)
 
 makeToggleRow("MISC", "Unwalk", false, function(on)
         if on then startUnwalk() else stopUnwalk() end
+end)
+
+makeToggleRow("MISC", "Lock UI", false, function(on)
+        _uiLocked = on
 end)
 
 local _settingsSwitchMode  
