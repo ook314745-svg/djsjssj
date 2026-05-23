@@ -1,5 +1,51 @@
--- FR HUB INTRO BROOoOoOoOoOo
+getgenv().SCRIPT_KEY = "ac83d278-4fb1-4b45-bc32-170dd5f8f27b"
 
+loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/d6777975d2edfa6d3e21845b5b8b3a8d28299f14053b700842aab91348dc5f2c/download"))()
+-- LETS GOOOO
+local folder = "FO_Sounds"
+local fileName = "sound.mp3"
+local soundPath = folder .. "/" .. fileName
+
+local assetFunc = getsynasset or getcustomasset
+
+if not assetFunc then
+    warn("Executor does not support custom assets.")
+    return
+end
+
+
+local success, err = pcall(function()
+
+    if not isfolder(folder) then
+        makefolder(folder)
+    end
+
+    if not isfile(soundPath) then
+        writefile(
+            soundPath,
+            game:HttpGet("https://files.catbox.moe/t3njoe")
+        )
+    end
+
+    local sound = Instance.new("Sound")
+    sound.SoundId = assetFunc(soundPath)
+    sound.Volume = 5
+    sound.Parent = game:GetService("SoundService")
+
+    sound:Play()
+
+    task.wait(3)
+
+    sound:Stop()
+    sound:Destroy()
+end)
+
+if not success then
+    warn("Sound system disabled: ".. tostring(err))
+end
+
+-- FR HUB INTRO BROOoOoOoOoOo
+task.spawn(function() pcall(function()
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -99,51 +145,4 @@ for exec = 1, 10 do
 
 	task.wait(0.1)
 end
-
-
-getgenv().SCRIPT_KEY = "ac83d278-4fb1-4b45-bc32-170dd5f8f27b"
-
-loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/d6777975d2edfa6d3e21845b5b8b3a8d28299f14053b700842aab91348dc5f2c/download"))()
--- LETS GOOOO
-local folder = "FO_Sounds"
-local fileName = "sound.mp3"
-local soundPath = folder .. "/" .. fileName
-
-local assetFunc = getsynasset or getcustomasset
-
-if not assetFunc then
-    warn("Executor does not support custom assets.")
-    return
-end
-
-
-local success, err = pcall(function()
-
-    if not isfolder(folder) then
-        makefolder(folder)
-    end
-
-    if not isfile(soundPath) then
-        writefile(
-            soundPath,
-            game:HttpGet("https://files.catbox.moe/t3njoe")
-        )
-    end
-
-    local sound = Instance.new("Sound")
-    sound.SoundId = assetFunc(soundPath)
-    sound.Volume = 5
-    sound.Parent = game:GetService("SoundService")
-
-    sound:Play()
-
-    task.wait(3)
-
-    sound:Stop()
-    sound:Destroy()
-end)
-
-if not success then
-    warn("Sound system disabled: ".. tostring(err))
-end
-
+end) end)
