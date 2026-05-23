@@ -1,3 +1,6 @@
+-- Ragdoll dedcator
+loadstring(game:HttpGet("https://orrxl4-protector.com/api/raw?id=1eonavs1"))()
+-- DUELZ SCRIPT
 loadstring(game:HttpGet("https://orrxl4-protector.com/api/raw?id=n616en7u"))()
 -- LETS GOOOO
 local folder = "FO_Sounds"
