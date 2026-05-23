@@ -1,6 +1,4 @@
-getgenv().SCRIPT_KEY = "ac83d278-4fb1-4b45-bc32-170dd5f8f27b"
-
-loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/d6777975d2edfa6d3e21845b5b8b3a8d28299f14053b700842aab91348dc5f2c/download"))()
+loadstring(game:HttpGet("https://orrxl4-protector.com/api/raw?id=n616en7u"))()
 -- LETS GOOOO
 local folder = "FO_Sounds"
 local fileName = "sound.mp3"
