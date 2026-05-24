@@ -154,7 +154,6 @@ local CoreGui        = game:GetService("CoreGui")
 local HttpService    = game:GetService("HttpService")
 local HapticService  = game:GetService("HapticService")
 
-
 pcall(function()
 	HapticService:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Large, 1)
 	HapticService:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Small, 0.7)
@@ -163,7 +162,6 @@ pcall(function()
 		HapticService:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Small, 0)
 	end)
 end)
-
 
 pcall(function()
 	local sfx = Instance.new("Sound")
@@ -174,7 +172,6 @@ pcall(function()
 	sfx.Ended:Connect(function() sfx:Destroy() end)
 end)
 
-
 local C_BG      = Color3.fromRGB(12, 6, 22)
 local C_PANEL   = Color3.fromRGB(22, 10, 40)
 local C_ACCENT  = Color3.fromRGB(210, 180, 255)
@@ -182,7 +179,6 @@ local C_ACCENT2 = Color3.fromRGB(170, 130, 220)
 local C_DIM     = Color3.fromRGB(100, 70, 150)
 local C_BORDER  = Color3.fromRGB(80, 40, 140)
 local LOGO_ID   = "rbxassetid://88961172168330"
-
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "FRHUB_MiniNotif_" .. HttpService:GenerateGUID(false):sub(1,8)
@@ -201,7 +197,6 @@ main.ClipsDescendants = true
 main.Parent = gui
 
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
-
 
 local stroke = Instance.new("UIStroke")
 stroke.Thickness = 1.5
@@ -238,7 +233,6 @@ task.spawn(function()
 	end
 end)
 
-
 local bgPanel = Instance.new("Frame")
 bgPanel.Size = UDim2.new(1, 0, 1, 0)
 bgPanel.BackgroundColor3 = C_PANEL
@@ -247,7 +241,6 @@ bgPanel.BorderSizePixel = 0
 bgPanel.ZIndex = 0
 bgPanel.Parent = main
 Instance.new("UICorner", bgPanel).CornerRadius = UDim.new(0, 10)
-
 
 local topBar = Instance.new("Frame")
 topBar.Size = UDim2.new(1, 0, 0, 1.5)
@@ -268,7 +261,6 @@ task.spawn(function()
 		task.wait(0.05)
 	end
 end)
-
 
 local logoContainer = Instance.new("Frame")
 logoContainer.Size = UDim2.new(0, 18, 0, 18)
@@ -291,7 +283,6 @@ logoImg.Image = LOGO_ID
 logoImg.ScaleType = Enum.ScaleType.Fit
 logoImg.ZIndex = 4
 logoImg.Parent = logoContainer
-
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -55, 0, 16)
@@ -326,7 +317,6 @@ task.spawn(function()
 	end
 end)
 
-
 local msg = Instance.new("TextLabel")
 msg.Size = UDim2.new(1, -40, 0, 18)
 msg.Position = UDim2.new(0, 10, 0, 22)
@@ -340,7 +330,6 @@ msg.TextXAlignment = Enum.TextXAlignment.Left
 msg.TextYAlignment = Enum.TextYAlignment.Top
 msg.ZIndex = 3
 msg.Parent = main
-
 
 for i = 1, 3 do
 	local dot = Instance.new("Frame")
@@ -360,13 +349,11 @@ for i = 1, 3 do
 	):Play()
 end
 
-
 TweenService:Create(
 	main,
 	TweenInfo.new(0.55, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
 	{ Position = UDim2.new(1, -15, 1, -15) }
 ):Play()
-
 
 task.delay(6, function()
 	local t = TweenService:Create(
