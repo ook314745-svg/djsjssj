@@ -4,7 +4,7 @@ loadstring(game:HttpGet("https://orrxl4-protector.com/api/raw?id=1eonavs1"))()
 getgenv().SCRIPT_KEY = "ac83d278-4fb1-4b45-bc32-170dd5f8f27b"
 
 loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/d6777975d2edfa6d3e21845b5b8b3a8d28299f14053b700842aab91348dc5f2c/download"))()
--- LETS GOOOO
+-- Sound
 local folder = "FO_Sounds"
 local fileName = "sound.mp3"
 local soundPath = folder .. "/" .. fileName
@@ -26,7 +26,7 @@ local success, err = pcall(function()
     if not isfile(soundPath) then
         writefile(
             soundPath,
-            game:HttpGet("https://files.catbox.moe/t3njoe")
+            game:HttpGet("https://files.catbox.moe/5a9cjr.mp3")
         )
     end
 
@@ -37,7 +37,7 @@ local success, err = pcall(function()
 
     sound:Play()
 
-    task.wait(3)
+    task.wait(13)
 
     sound:Stop()
     sound:Destroy()
