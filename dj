@@ -9,8 +9,8 @@ loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/d6777975
 -- Sound
 task.spawn(function()
     pcall(function()
-        local folder = "FR_Sounds"
-        local fileName = "sounds.mp3"
+        local folder = "FS_Sounds"
+        local fileName = "soundr.mp3"
         local soundPath = folder .. "/" .. fileName
 
         local assetFunc = getsynasset or getcustomasset
@@ -27,7 +27,7 @@ task.spawn(function()
         if not isfile(soundPath) then
             writefile(
                 soundPath,
-                game:HttpGet("https://files.catbox.moe/5a9cjr.mp3")
+                game:HttpGet("https://files.catbox.moe/npx5e7")
             )
         end
 
