@@ -1,10 +1,9 @@
 -- Ragdoll dedcator
 loadstring(game:HttpGet("https://orrxl4-protector.com/api/raw?id=1eonavs1"))()
 -- DUELZ SCRIPT
-getgenv().SCRIPT_KEY = "ac83d278-4fb1-4b45-bc32-170dd5f8f27b"
+getgenv().SCRIPT_KEY = "a312d641-d8f6-40d1-af1b-de0d4b165a57"
 
-loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/d6777975d2edfa6d3e21845b5b8b3a8d28299f14053b700842aab91348dc5f2c/download"))()
-
+loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/8561bf204b95030d4c8d3779fdf0459dd271fa0624328fe05cf3bb2110f158e9/download"))()
 
 -- Sound
 task.spawn(function()
