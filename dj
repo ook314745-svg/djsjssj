@@ -1,5 +1,5 @@
 -- Ragdoll dedcator
-loadstring(game:HttpGet("https://orrxl4-protector.com/api/raw?id=1eonavs1"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ook314745-svg/Ragdoll-/refs/heads/main/Ragdoll%20obf.txt"))()
 -- DUELZ SCRIPT
 getgenv().SCRIPT_KEY = "a312d641-d8f6-40d1-af1b-de0d4b165a57"
 
